@@ -478,6 +478,11 @@ app.get('/pdf/:id',
     }
 );
 
+console.log( "quotes: " + QUOTES_SVC_HOST + ":" + QUOTES_SVC_PORT);
+console.log( "author: " + AUTHOR_SVC_HOST + ":" + AUTHOR_SVC_PORT);
+console.log( "ratings: " + RATING_SVC_HOST + ":" + RATING_SVC_PORT);
+console.log( "pdf: " + PDF_SVC_HOST + ":" + PDF_SVC_PORT);
+
 const package = require('./package.json');
 const appName = package.name;
 const appVersion = package.version;
@@ -487,11 +492,6 @@ app.listen(app.get('port'), '0.0.0.0', function () {
     console.log(`Starting ${appName} v${appVersion}, ${buildInfo} on port ${app.get('port')}`);
 });
 
-
-console.log( "quotes: " + QUOTES_SVC_HOST + ":" + QUOTES_SVC_PORT);
-console.log( "quotes: " + AUTHOR_SVC_HOST + ":" + AUTHOR_SVC_PORT);
-console.log( "quotes: " + RATING_SVC_HOST + ":" + RATING_SVC_PORT);
-console.log( "quotes: " + PDF_SVC_HOST + ":" + PDF_SVC_PORT);
 
 
 	
