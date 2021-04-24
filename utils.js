@@ -42,8 +42,12 @@ function pickWeighted(options){
 
 exports.pickWeighted = pickWeighted;
 
-function log(msg){
-    console.log(msg);
+function log(msg, token){
+    if( typeof token == 'undefined') {
+        console.log(msg);
+    } else {
+        console.log(`[${token}] ${msg}`);
+    }
 }
 
 exports.log = log;

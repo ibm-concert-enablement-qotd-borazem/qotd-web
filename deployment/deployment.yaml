@@ -28,7 +28,7 @@ spec:
             - name: PORT
               value: "3000"
             - name: LOCAL_LOGGING
-              value: "true"
+              value: "false"
             - name: ENABLE_INSTANA
               value: "false"
             - name: QUOTE_SVC_HOST

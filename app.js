@@ -95,6 +95,7 @@ function updateApiResponseMetric(start){
 
 function addRating(quote,requestToken){
     return new Promise( (resolve,reject) => {
+        utils.log('Getting rating for quote: '+quote.id, requestToken );
         try{
             const options = {
                 "headers": { "Accept": "application/json"} ,
@@ -113,16 +114,19 @@ function addRating(quote,requestToken){
                     utils.logLocal(`Quote svc response: ${ratingRes.statusCode}`);
     
                     if( ratingRes.statusCode == 200 ) {
+                        utils.log('Got rating for quote: '+quote.id, requestToken );
                         var buffer = Buffer.concat(rawData).toString();
                         var rating = JSON.parse(buffer);
                         quote.rating = rating.rating;
                         resolve(quote);
                     } else {
+                        utils.log('Rejecting rating for quote: '+quote.id+' Rating status code: '+ratingRes.statusCode, requestToken );
                         reject(ratingRes.statusCode);
                     }
                 });
     
                 ratingRes.on('error', error => {
+                    utils.log('Rejecting rating for quote: '+quote.id+' Error: '+error, requestToken );
                     reject(error);
                 });
        
@@ -131,7 +135,7 @@ function addRating(quote,requestToken){
             ratingReq.end();     
     
         } catch( err ) {
-            utils.log("Problem getting daily quote.  Request token: " + requestToken);
+            utils.log('Rejecting rating for quote: '+quote.id+' Err: '+err, requestToken );
             reject(err);
         }
     });
@@ -140,6 +144,8 @@ function addRating(quote,requestToken){
 function getDailyQuote(requestToken){
     return new Promise( (resolve,reject) => {
         try{
+            utils.log('Getting daily quote.', requestToken );
+
             const options = {
                 "headers": { "Accept": "application/json"} ,
                 "method": 'GET',
@@ -157,15 +163,18 @@ function getDailyQuote(requestToken){
                     utils.logLocal(`Quote svc response: ${quoteRes.statusCode}`);
     
                     if( quoteRes.statusCode == 200 ) {
+                        utils.log('Obtained daily quote.', requestToken );
                         var buffer = Buffer.concat(rawData).toString();
                         var rating = JSON.parse(buffer);
                         resolve(rating);
                     } else {
+                        utils.log('Rejecting request for daily quote. Response Code: ' + quoteRes.statusCode , requestToken );
                         reject(quoteRes.statusCode);
                     }
                 });
     
                 quoteRes.on('error', error => {
+                    utils.log('Rejecting request for daily quote. Error: ' + error , requestToken );
                     reject(error);
                 });
        
@@ -174,7 +183,7 @@ function getDailyQuote(requestToken){
             quoteReq.end();     
     
         } catch( err ) {
-            utils.log("Problem getting daily quote.  Request token: " + requestToken);
+            utils.log("Problem getting daily quote. Error: " + err, requestToken );
             reject(err);
         }
 
@@ -184,6 +193,7 @@ function getDailyQuote(requestToken){
 function getRandomQuote(requestToken){
     return new Promise( (resolve,reject) => {
         try{
+            utils.log('Getting random quote.', requestToken );
             const options = {
                 "headers": { "Accept": "application/json"} ,
                 "method": 'GET',
@@ -201,15 +211,18 @@ function getRandomQuote(requestToken){
                     utils.logLocal(`Quote svc response: ${quoteRes.statusCode}`);
     
                     if( quoteRes.statusCode == 200 ) {
+                        utils.log('Obtained random quote.', requestToken );
                         var buffer = Buffer.concat(rawData).toString();
                         var rating = JSON.parse(buffer);
                         resolve(rating);
                     } else {
+                        utils.log('Rejecting request for random quote. Response Code: quoteRes.statusCode' , requestToken );
                         reject(quoteRes.statusCode);
                     }
                 });
     
                 quoteRes.on('error', error => {
+                    utils.log('Rejecting request for random quote. Error: ' + error , requestToken );
                     reject(error);
                 });
        
@@ -218,7 +231,7 @@ function getRandomQuote(requestToken){
             quoteReq.end();     
     
         } catch( err ) {
-            utils.log("Problem getting daily quote.  Request token: " + requestToken);
+            utils.log('Rejecting request for random quote. Err: ' + error , requestToken );
             reject(err);
         }
 
@@ -226,11 +239,13 @@ function getRandomQuote(requestToken){
 }
 
 app.get('/', function(req,res) {
-    var start = new Date().getTime();        
+    var start = new Date().getTime();
+    var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     var requestToken = uuidv4();
+    utils.log('Starting new request token: ' + requestToken + ' for IP: ' + ip);
     var delay = metrics.getDelay();
     utils.logLocal( '[' + start + '] Daily quote page being delayed: ' + delay + 'ms');
-    utils.log('Web request: /.');
+    utils.log('Web request: /.', requestToken );
 
     setTimeout( function() {
         
@@ -247,7 +262,7 @@ app.get('/', function(req,res) {
             })
 
         } catch( err ) {
-            utils.log("Problem getting daily quote.  Request token: " + requestToken);
+            utils.log("Problem getting daily quote. Err: " + err, requestToken);
             res.status(500).send("Problem getting daily quote.");
         }
     }, delay); 
@@ -255,11 +270,13 @@ app.get('/', function(req,res) {
 });
 
 app.get('/random', function(req,res) {
-    var start = new Date().getTime();        
+    var start = new Date().getTime();
+    var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     var requestToken = uuidv4();
+    utils.log('Starting new request token: ' + requestToken + ' for IP: ' + ip);
     var delay = metrics.getDelay();
     utils.logLocal( '[' + start + '] Random quote page being delayed: ' + delay + 'ms');
-    utils.log('Web request: /random .');
+    utils.log('Web request: /random .', requestToken);
 
     setTimeout( function() {
         
@@ -275,7 +292,7 @@ app.get('/random', function(req,res) {
             })
 
         } catch( err ) {
-            utils.log("Problem getting random quote.  Request token: " + requestToken);
+            utils.log("Problem getting random quote. Err: " + err, requestToken);
             res.status(500).send("Problem getting random quote.");
         }
     }, delay); 
@@ -284,12 +301,14 @@ app.get('/random', function(req,res) {
 
 
 app.get('/author/:id', function(req,res) {
+    var start = new Date().getTime();
     var id = req.params.id;
-    var start = new Date().getTime();        
+    var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     var requestToken = uuidv4();
+    utils.log('Starting new request token: ' + requestToken + ' for IP: ' + ip);
     var delay = metrics.getDelay();
     utils.logLocal( '[' + start + '] Author bio quote page being delayed: ' + delay + 'ms');
-    utils.log('Author bio request: /author/'+id+' .');
+    utils.log('Author bio request: /author/'+id+' .', requestToken );
 
     setTimeout( function() {
         try{
@@ -310,11 +329,11 @@ app.get('/author/:id', function(req,res) {
                     utils.logLocal(`Quote svc response: ${bioReq.statusCode}`);
 
                     if( bioReq.statusCode == 200 ) {
+                        utils.log("Author bio received.  Author id: " + id + requestToken);
                         var buffer = Buffer.concat(rawData).toString();
                         var bio = JSON.parse(buffer);
                         res.render('author', bio);
                         updateApiResponseMetric(start);
-                        utils.log("Random quote provided. Request token: " + requestToken);
                     } else {
                         var quote = {
                             "title": "QOD Error",
@@ -323,15 +342,15 @@ app.get('/author/:id', function(req,res) {
                             "author": "",
                             "genre": ""
                         };
-                        utils.log(error);
+                        utils.log("Problem getting author bio.  Error: " + error, requestToken);
+                        updateApiResponseMetric(start);
                         res.render('home', quote);
                     }
                 });
 
                 bioReq.on('error', error => {
+                    utils.log("Problem getting author bio.  Error: " + error, requestToken);
                     updateApiResponseMetric(start);
-                    utils.log(error);
-                    utils.logLocal(error);
                 });
        
             });
@@ -339,8 +358,9 @@ app.get('/author/:id', function(req,res) {
             bioReq.end();     
 
         } catch( err ) {
-            utils.log("Problem getting daily quote.  Request token: " + requestToken);
+            utils.log("Problem getting daily quote. Err: " + err, requestToken);
             res.status(500).send("Problem getting daily quote.");
+            updateApiResponseMetric(start);
         }
     }, delay); 
 });
@@ -349,10 +369,8 @@ app.get('/author/:id', function(req,res) {
 app.get('/images/:id',
     function (req, res) {
         var start = new Date().getTime();
-
+        var requestToken = uuidv4();
         var delay = metrics.getDelay();
-
-        var requestToken = req.query.token;
         var id = req.params.id;
         utils.log("Author image request id: " + id + " Request token: " + requestToken );
         utils.logLocal( '[' + start + '] Service being delayed: ' + delay + 'ms');
@@ -395,9 +413,9 @@ app.get('/images/:id',
                     });
 
                     imgRes.on('error', error => {
+                        utils.log("Problem getting image " + id + " Error: " + error, requestToken);
+                        res.status(500).send("Image " + id + " not found");
                         updateApiResponseMetric(start);
-                        utils.log(error);
-                        utils.logLocal(error);
                     });
            
                 });
@@ -405,8 +423,9 @@ app.get('/images/:id',
                 imgReq.end();     
 
             } catch( err ) {
-                utils.log("Problem getting image " + id + ". Request token: " + requestToken);
+                utils.log("Problem getting image " + id + " Err: " + err, requestToken);
                 res.status(500).send("Image " + id + " not found");
+                updateApiResponseMetric(start);
             }
         }, delay); 
     }
@@ -415,12 +434,12 @@ app.get('/images/:id',
 app.get('/pdf/:id',
     function (req, res) {
         var start = new Date().getTime();
-
+        var requestToken = uuidv4();
         var delay = metrics.getDelay();
 
-        var requestToken = req.query.token;
+        var delay = metrics.getDelay();
         var id = req.params.id;
-        utils.log("PDF request id: " + id + " Request token: " + requestToken );
+        utils.log("PDF request for quote id: " + id, requestToken );
         utils.logLocal( '[' + start + '] Service being delayed: ' + delay + 'ms');
 
         setTimeout( function() {
@@ -445,6 +464,7 @@ app.get('/pdf/:id',
                         utils.logLocal(`Image svc response: ${pdfRes.statusCode}`);
 
                         if( pdfRes.statusCode == 200 ) {
+                            utils.log("PDF received.", requestToken );
                             var buffer = Buffer.concat(rawData);
                             res.writeHead(200, {
                                 'Content-Type': 'application/pdf',
@@ -452,18 +472,19 @@ app.get('/pdf/:id',
                             });
                             res.end(Buffer.from(buffer, 'binary'));
                             updateApiResponseMetric(start);
-                            utils.log("PDF image provided. Request token: " + requestToken);
+                            utils.log("PDF image sent.", requestToken);
                         } else {
                             // assume any error will report a 404
-                            utils.log("PDF " + id + " not found. Request token: " + requestToken);
+                            utils.log("PDF " + id + " not found.", requestToken);
                             res.status(404).send("PDF " + id + " not found");
+                            updateApiResponseMetric(start);
                         }
                     });
 
                     pdfRes.on('error', error => {
+                        utils.log("Attempt to get PDF " + id + " unsuccessful. Error: " + error, requestToken);
+                        res.status(500).send("PDF " + id + " Error: " + error);
                         updateApiResponseMetric(start);
-                        utils.log(error);
-                        utils.logLocal(error);
                     });
            
                 });
@@ -472,7 +493,8 @@ app.get('/pdf/:id',
 
             } catch( err ) {
                 utils.log("Problem getting PDF " + id + ". Request token: " + requestToken);
-                res.status(500).send("PDF " + id + " not found");
+                res.status(500).send("PDF " + id + " Error: " + error);
+                updateApiResponseMetric(start);
             }
         }, delay); 
     }
