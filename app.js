@@ -250,9 +250,9 @@ app.get('/', function(req,res) {
     setTimeout( function() {
         
         try{
-            getDailyQuote()
+            getDailyQuote(requestToken)
             .then( (quote) => {
-                addRating(quote)
+                addRating(quote,requestToken)
                 .then( (quote) => {
                     var now = new moment();
                     quote.today = now.format("dddd, MMMM Do YYYY");
