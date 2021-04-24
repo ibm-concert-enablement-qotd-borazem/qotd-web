@@ -488,5 +488,10 @@ app.listen(app.get('port'), '0.0.0.0', function () {
 });
 
 
+console.log( "quotes: " + QUOTES_SVC_HOST + ":" + QUOTES_SVC_PORT);
+console.log( "quotes: " + AUTHOR_SVC_HOST + ":" + AUTHOR_SVC_PORT);
+console.log( "quotes: " + RATING_SVC_HOST + ":" + RATING_SVC_PORT);
+console.log( "quotes: " + PDF_SVC_HOST + ":" + PDF_SVC_PORT);
+
 
 	
