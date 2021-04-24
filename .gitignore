@@ -1,5 +1,5 @@
 **/.DS_Store
 notes.txt
 node_modules/*
-z_notes.txt
+z_*
 .env
