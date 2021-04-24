@@ -9,11 +9,11 @@ docker run -d \
     -e ENABLE_INSTANA=false \
     -e QUOTES_SVC_HOST=192.168.2.152 \
     -e QUOTES_SVC_PORT=3001 \
-    -e AUTHOR_SVC_HOST=localhost \
+    -e AUTHOR_SVC_HOST=192.168.2.152 \
     -e AUTHOR_SVC_PORT=3002 \
-    -e RATING_SVC_HOST=localhost \
+    -e RATING_SVC_HOST=192.168.2.152 \
     -e RATING_SVC_PORT=3004 \
-    -e PDF_SVC_HOST=localhost \
+    -e PDF_SVC_HOST=192.168.2.152 \
     -e PDF_SVC_PORT=3005 \
     registry.gitlab.com/quote-of-the-day/qotd-web-service:latest
 
