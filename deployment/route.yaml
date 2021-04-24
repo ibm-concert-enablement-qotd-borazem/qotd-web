@@ -1,12 +1,15 @@
-apiVersion: route.openshift.io/v1
 kind: Route
+apiVersion: route.openshift.io/v1
 metadata:
-  name: qod
-  namespace: qod
+  name: qotd-web
+  labels:
+    app: qotd
 spec:
-  path: /
+  subdomain: ''
   to:
     kind: Service
-    name: qod-web
+    name: qotd-web
+    weight: 100
   port:
     targetPort: http
+  wildcardPolicy: None

@@ -1,28 +1,49 @@
-apiVersion: apps/v1
 kind: Deployment
+apiVersion: apps/v1
 metadata:
-  name: qod-web
+  name: qotd-web
   labels:
-    app: qod-web
-    tier: ui
+    app: qotd
+    tier: api
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: qod-web
+      app: qotd-web
   template:
     metadata:
       labels:
-        app: qod-web
+        app: qotd-web
     spec:
+      restartPolicy: Always
       containers:
-        - name: qod-web
-          image: ibmicpcoc/qod-web
+        - name: qotd-web
+          image: registry.gitlab.com/quote-of-the-day/qotd-web:latest
           imagePullPolicy: Always
           ports:
             - name: http
-              containerPort: 3001
+              containerPort: 3000
               protocol: TCP
           env:
-            - name: QOD_API_URL
-              value: "http://qod-api:3000"
+            - name: PORT
+              value: "3000"
+            - name: LOCAL_LOGGING
+              value: "true"
+            - name: ENABLE_INSTANA
+              value: "false"
+            - name: QUOTE_SVC_HOST
+              value: "qotd-quote.qotd.svc.cluster.local"
+            - name: QUOTE_SVC_PORT
+              value: "3001"
+            - name: AUTHOR_SVC_HOST
+              value: "qotd-author.qotd.svc.cluster.local"
+            - name: AUTHOR_SVC_PORT
+              value: "3002"
+            - name: RATING_SVC_HOST
+              value: "qotd-rating.qotd.svc.cluster.local"
+            - name: RATING_SVC_PORT
+              value: "3004"
+            - name: PDF_SVC_HOST
+              value: "qotd-pdf.qotd.svc.cluster.local"
+            - name: PDF_SVC_PORT
+              value: "3005"
