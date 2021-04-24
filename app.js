@@ -5,7 +5,7 @@ const moment = require('moment');
 const promMid = require('express-prometheus-middleware');
 const { v4: uuidv4 } = require('uuid');
 
-if( process.env.ENABLE_INSTANA ) {
+if( process.env.ENABLE_INSTANA == true ) {
     require('@instana/collector')();
 }
 
@@ -484,7 +484,7 @@ const appVersion = package.version;
 const buildInfo = fs.readFileSync('build.txt');
 
 app.listen(app.get('port'), '0.0.0.0', function () {
-    console.log(`Starting ${appName} v${appVersion}, build: ${buildInfo} on port ${app.get('port')}`);
+    console.log(`Starting ${appName} v${appVersion}, ${buildInfo} on port ${app.get('port')}`);
 });
 
 

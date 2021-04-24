@@ -3,9 +3,11 @@ FROM node:11.15.0-alpine
 RUN mkdir /app
 WORKDIR /app
 
-COPY app.js .
 COPY LICENSE .
+COPY README.md .
 COPY package.json .
+COPY build.txt .
+COPY ./*.js ./
 COPY views ./views
 COPY public ./public
 
