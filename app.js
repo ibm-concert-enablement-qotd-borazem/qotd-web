@@ -330,9 +330,9 @@ app.get('/author/:id', function(req,res) {
                             "author": "",
                             "genre": ""
                         };
-                        utils.log("Problem getting author bio. " + error, requestToken);
+                        utils.log("Problem getting author bio. Service Status Code: " + bioReq.statusCode, requestToken);
+                        res.status(500).send("Problem getting author bio.");
                         updateApiResponseMetric(start);
-                        res.render('home', quote);
                     }
                 });
             })
