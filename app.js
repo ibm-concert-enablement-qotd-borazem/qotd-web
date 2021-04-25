@@ -5,7 +5,7 @@ const moment = require('moment');
 const promMid = require('express-prometheus-middleware');
 const { v4: uuidv4 } = require('uuid');
 
-if( process.env.ENABLE_INSTANA == true ) {
+if( process.env.ENABLE_INSTANA == "true" ) {
     require('@instana/collector')();
 }
 
@@ -96,54 +96,47 @@ function updateApiResponseMetric(start){
 function addRating(quote,requestToken){
     return new Promise( (resolve,reject) => {
         utils.log('Getting rating for quote: '+quote.id, requestToken );
-        try{
-            const options = {
-                "headers": { "Accept": "application/json"} ,
-                "method": 'GET',
-                "hostname": RATING_SVC_HOST,
-                "port": RATING_SVC_PORT,
-                "path": '/ratings/'+quote.id+'?requestToken='+requestToken
-            }
-            
-            var ratingReq = http.request(options, function( ratingRes ) {
-                var rawData = [];
-                ratingRes.on('data', (chunk) => {
-                    rawData.push(chunk);
-                });
-                ratingRes.on('end', () => {
-                    utils.logLocal(`Quote svc response: ${ratingRes.statusCode}`);
-    
-                    if( ratingRes.statusCode == 200 ) {
-                        utils.log('Got rating for quote: '+quote.id, requestToken );
-                        var buffer = Buffer.concat(rawData).toString();
-                        var rating = JSON.parse(buffer);
-                        quote.rating = rating.rating;
-                        resolve(quote);
-                    } else {
-                        utils.log('Rejecting rating for quote: '+quote.id+' Rating status code: '+ratingRes.statusCode, requestToken );
-                        reject(ratingRes.statusCode);
-                    }
-                });
-    
-                ratingRes.on('error', error => {
-                    utils.log('Rejecting rating for quote: '+quote.id+' Error: '+error, requestToken );
-                    reject(error);
-                });
-       
-            });
-    
-            ratingReq.end();     
-    
-        } catch( err ) {
-            utils.log('Rejecting rating for quote: '+quote.id+' Err: '+err, requestToken );
-            reject(err);
+        const options = {
+            "headers": { "Accept": "application/json"} ,
+            "method": 'GET',
+            "hostname": RATING_SVC_HOST,
+            "port": RATING_SVC_PORT,
+            "path": '/ratings/'+quote.id+'?requestToken='+requestToken
         }
+        
+        http.request(options, function( ratingRes ) {
+            var rawData = [];
+            ratingRes.on('data', (chunk) => {
+                rawData.push(chunk);
+            });
+            ratingRes.on('end', () => {
+                utils.logLocal(`Quote svc response: ${ratingRes.statusCode}`);
+
+                if( ratingRes.statusCode == 200 ) {
+                    utils.log('Got rating for quote: '+quote.id, requestToken );
+                    var buffer = Buffer.concat(rawData).toString();
+                    var rating = JSON.parse(buffer);
+                    quote.rating = rating.rating;
+                    resolve(quote);
+                } else {
+                    utils.log('Rejecting rating for quote: '+quote.id+' Rating status code: '+ratingRes.statusCode, requestToken );
+                    reject(ratingRes.statusCode);
+                }
+            });
+
+    
+        })
+        .on('error', error => {
+            utils.log('Rejecting rating for quote: '+quote.id+' Error: '+error, requestToken );
+            reject(error);
+        })
+        .end();     
     });
 }
 
 function getDailyQuote(requestToken){
     return new Promise( (resolve,reject) => {
-        try{
+
             utils.log('Getting daily quote.', requestToken );
 
             const options = {
@@ -154,7 +147,7 @@ function getDailyQuote(requestToken){
                 "path": '/daily?requestToken='+requestToken
             }
             
-            var quoteReq = http.request(options, function( quoteRes ) {
+            http.request(options, function( quoteRes ) {
                 var rawData = [];
                 quoteRes.on('data', (chunk) => {
                     rawData.push(chunk);
@@ -172,27 +165,21 @@ function getDailyQuote(requestToken){
                         reject(quoteRes.statusCode);
                     }
                 });
-    
-                quoteRes.on('error', error => {
-                    utils.log('Rejecting request for daily quote. Error: ' + error , requestToken );
-                    reject(error);
-                });
+
        
-            });
-    
-            quoteReq.end();     
-    
-        } catch( err ) {
-            utils.log("Problem getting daily quote. Error: " + err, requestToken );
-            reject(err);
-        }
+            })
+            .on('error', error => {
+                utils.log('Rejecting request for daily quote. Error: ' + error , requestToken );
+                reject(error);
+            })
+            .end();     
 
     });
 }
 
 function getRandomQuote(requestToken){
     return new Promise( (resolve,reject) => {
-        try{
+
             utils.log('Getting random quote.', requestToken );
             const options = {
                 "headers": { "Accept": "application/json"} ,
@@ -202,7 +189,7 @@ function getRandomQuote(requestToken){
                 "path": '/random?requestToken='+requestToken
             }
             
-            var quoteReq = http.request(options, function( quoteRes ) {
+            http.request(options, function( quoteRes ) {
                 var rawData = [];
                 quoteRes.on('data', (chunk) => {
                     rawData.push(chunk);
@@ -221,19 +208,11 @@ function getRandomQuote(requestToken){
                     }
                 });
     
-                quoteRes.on('error', error => {
-                    utils.log('Rejecting request for random quote. Error: ' + error , requestToken );
-                    reject(error);
-                });
-       
-            });
-    
-            quoteReq.end();     
-    
-        } catch( err ) {
-            utils.log('Rejecting request for random quote. Err: ' + error , requestToken );
-            reject(err);
-        }
+            })
+            .on('error', error => {
+                utils.log('Rejecting request for random quote. Error: ' + error , requestToken );
+                reject(error);
+            }).end();     
 
     });
 }
@@ -249,22 +228,31 @@ app.get('/', function(req,res) {
 
     setTimeout( function() {
         
-        try{
-            getDailyQuote(requestToken)
+        getDailyQuote(requestToken)
+        .then( (quote) => {
+            var now = new moment();
+            quote.today = now.format("dddd, MMMM Do YYYY");
+            quote.title = "Quote of the Day";
+            addRating(quote,requestToken)
             .then( (quote) => {
-                addRating(quote,requestToken)
-                .then( (quote) => {
-                    var now = new moment();
-                    quote.today = now.format("dddd, MMMM Do YYYY");
-                    quote.title = "Quote of the Day";
-                    res.render('home', quote);
-                });
+                res.render('home', quote);
             })
+            .catch(
+                (err) => {
+                    utils.log("Internal Error.  Problem getting rating. Err: " + err, requestToken);
+                    // send th epage anyway but with a -1 rating
+                    quote.rating = -1;
+                    res.render('home', quote);
+                }
+            );
+        })
+        .catch(
+            (err) => {
+                utils.log("Internal Error.  Problem getting daily quote. Err: " + err, requestToken);
+                res.status(500).send("Problem getting daily quote.");
+            }
+        );
 
-        } catch( err ) {
-            utils.log("Problem getting daily quote. Err: " + err, requestToken);
-            res.status(500).send("Problem getting daily quote.");
-        }
     }, delay); 
 
 });
@@ -280,21 +268,22 @@ app.get('/random', function(req,res) {
 
     setTimeout( function() {
         
-        try{
-            getRandomQuote()
+        getRandomQuote(requestToken)
+        .then( (quote) => {
+            addRating(quote,requestToken)
             .then( (quote) => {
-                addRating(quote)
-                .then( (quote) => {
-                    quote.today = "";
-                    quote.title = "Random Quote";
-                    res.render('home', quote);
-                });
-            })
+                quote.today = "";
+                quote.title = "Random Quote";
+                res.render('home', quote);
+            });
+        })
+        .catch(
+            (err) => {
+                utils.log("Internal Error.  Problem getting random quote. Err: " + err, requestToken);
+                res.status(500).send("Problem getting random quote.");
+            }
+        );
 
-        } catch( err ) {
-            utils.log("Problem getting random quote. Err: " + err, requestToken);
-            res.status(500).send("Problem getting random quote.");
-        }
     }, delay); 
 
 });
@@ -311,7 +300,6 @@ app.get('/author/:id', function(req,res) {
     utils.log('Author bio request: /author/'+id+' .', requestToken );
 
     setTimeout( function() {
-        try{
             const options = {
                 "headers": { "Accept": "application/json"} ,
                 "method": 'GET',
@@ -320,7 +308,7 @@ app.get('/author/:id', function(req,res) {
                 "path": '/authors/'+id+'?requestToken='+requestToken
             }
             
-            var bioReq = http.request(options, function( bioReq ) {
+            http.request(options, function( bioReq ) {
                 var rawData = [];
                 bioReq.on('data', (chunk) => {
                     rawData.push(chunk);
@@ -329,39 +317,32 @@ app.get('/author/:id', function(req,res) {
                     utils.logLocal(`Quote svc response: ${bioReq.statusCode}`);
 
                     if( bioReq.statusCode == 200 ) {
-                        utils.log("Author bio received.  Author id: " + id + requestToken);
+                        utils.log("Author bio received.  Author id: " + id, requestToken);
                         var buffer = Buffer.concat(rawData).toString();
                         var bio = JSON.parse(buffer);
                         res.render('author', bio);
                         updateApiResponseMetric(start);
                     } else {
                         var quote = {
-                            "title": "QOD Error",
+                            "title": "QotD Error",
                             "today": "",
                             "quote": bioReq.statusCode, // todo: get error msg
                             "author": "",
                             "genre": ""
                         };
-                        utils.log("Problem getting author bio.  Error: " + error, requestToken);
+                        utils.log("Problem getting author bio. " + error, requestToken);
                         updateApiResponseMetric(start);
                         res.render('home', quote);
                     }
                 });
+            })
+            .on('error', error => {
+                res.status(500).send("Problem getting author bio.");
+                utils.log("Problem getting author bio.  " + error, requestToken);
+                updateApiResponseMetric(start);
+            })
+            .end();     
 
-                bioReq.on('error', error => {
-                    utils.log("Problem getting author bio.  Error: " + error, requestToken);
-                    updateApiResponseMetric(start);
-                });
-       
-            });
-
-            bioReq.end();     
-
-        } catch( err ) {
-            utils.log("Problem getting daily quote. Err: " + err, requestToken);
-            res.status(500).send("Problem getting daily quote.");
-            updateApiResponseMetric(start);
-        }
     }, delay); 
 });
 
@@ -372,12 +353,13 @@ app.get('/images/:id',
         var requestToken = uuidv4();
         var delay = metrics.getDelay();
         var id = req.params.id;
-        utils.log("Author image request id: " + id + " Request token: " + requestToken );
+        var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+        var requestToken = uuidv4();
+        utils.log('Starting new request token: ' + requestToken + ' for IP: ' + ip);
+        utils.log("Author image request id: " + id, requestToken );
         utils.logLocal( '[' + start + '] Service being delayed: ' + delay + 'ms');
 
         setTimeout( function() {
-            try{
-                
                 const options = {
                     "headers": { "Accept": "image/jpeg"} ,
                     "method": 'GET',
@@ -386,7 +368,7 @@ app.get('/images/:id',
                     "path": '/images/'+id+'?requestToken='+requestToken
                 }
                 
-                var imgReq = http.request(options, function( imgRes ) {
+                http.request(options, function( imgRes ) {
                     var rawData = [];
 
                     imgRes.on('data', (chunk) => {
@@ -404,32 +386,36 @@ app.get('/images/:id',
                             });
                             res.end(Buffer.from(buffer, 'binary'));
                             updateApiResponseMetric(start);
-                            utils.log("Author image provided. Request token: " + requestToken);
+                            utils.log("Author image provided.", requestToken);
                         } else {
                             // assume any error will report a 404
-                            utils.log("Image " + id + " not found. Request token: " + requestToken);
-                            res.status(404).send("Image " + id + " not found");
+                            // TOTO: If image not there use default portrait 
+                            utils.log("Image " + id + " not found. Using default image.", requestToken);
+                            var defImage = fs.readFileSync('./public/images/generic.png');
+                            res.writeHead(200, {
+                                'Content-Type': 'image/jpeg',
+                                'Content-Length': defImage.length
+                            });
+                            res.end(Buffer.from(defImage, 'binary'));
+                            updateApiResponseMetric(start);
                         }
                     });
+                })
+                .on('error', error => {
+                    utils.log("Problem getting image " + id + " Error: " + error, requestToken);
+                    res.status(500).send("Image " + id + " not found");
+                    updateApiResponseMetric(start);
+                })
+                .end();     
 
-                    imgRes.on('error', error => {
-                        utils.log("Problem getting image " + id + " Error: " + error, requestToken);
-                        res.status(500).send("Image " + id + " not found");
-                        updateApiResponseMetric(start);
-                    });
-           
-                });
 
-                imgReq.end();     
-
-            } catch( err ) {
-                utils.log("Problem getting image " + id + " Err: " + err, requestToken);
-                res.status(500).send("Image " + id + " not found");
-                updateApiResponseMetric(start);
-            }
         }, delay); 
     }
 );
+
+function getDefaultImage(){
+
+}
 
 app.get('/pdf/:id',
     function (req, res) {
@@ -443,8 +429,6 @@ app.get('/pdf/:id',
         utils.logLocal( '[' + start + '] Service being delayed: ' + delay + 'ms');
 
         setTimeout( function() {
-            try{
-                
                 const options = {
                     "headers": { "Accept": "application/pdf"} ,
                     "method": 'GET',
@@ -453,7 +437,7 @@ app.get('/pdf/:id',
                     "path": '/pdf/'+id+'?requestToken='+requestToken
                 }
                 
-                var pdfRes = http.request(options, function( pdfRes ) {
+                http.request(options, function( pdfRes ) {
                     var rawData = [];
 
                     pdfRes.on('data', (chunk) => {
@@ -480,22 +464,14 @@ app.get('/pdf/:id',
                             updateApiResponseMetric(start);
                         }
                     });
+                })
+                .on('error', error => {
+                    utils.log("Attempt to get PDF " + id + " unsuccessful. Error: " + error, requestToken);
+                    res.status(500).send("PDF " + id + " Error: " + error);
+                    updateApiResponseMetric(start);
+                })
+                .end();     
 
-                    pdfRes.on('error', error => {
-                        utils.log("Attempt to get PDF " + id + " unsuccessful. Error: " + error, requestToken);
-                        res.status(500).send("PDF " + id + " Error: " + error);
-                        updateApiResponseMetric(start);
-                    });
-           
-                });
-
-                pdfRes.end();     
-
-            } catch( err ) {
-                utils.log("Problem getting PDF " + id + ". Request token: " + requestToken);
-                res.status(500).send("PDF " + id + " Error: " + error);
-                updateApiResponseMetric(start);
-            }
         }, delay); 
     }
 );
@@ -506,7 +482,6 @@ app.get('/version',
         res.send(`${appName} v${appVersion}, build: ${buildInfo}.`);
     }
 );
-
 
 const package = require('./package.json');
 const appName = package.name;

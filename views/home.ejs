@@ -34,7 +34,15 @@
       </p>
       <p>- <a href="/author/<%=author_id%>"><%=author%></a></p>
       <p>[<%=genre%>]</p>
-      <p><img src="/images/<%=rating%>star.png"></p>
+      <p>
+        <% if( rating < 0 || rating > 10) { %>
+            (Rating service not currently available)
+        <% } else { %>
+            <img src="/images/<%=rating%>star.png">
+        <% } %>      
+        
+    
+    </p>
     </div>
   </section>
 
