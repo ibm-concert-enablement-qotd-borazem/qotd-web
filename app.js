@@ -100,9 +100,9 @@ function newReqToken(){
 
 function updateApiResponseMetric(start){
     var stop = new Date().getTime();
-    var resTime = stop - start;
+    var resTime = (stop - start) / 1000;  // convert to seconds
     metrics.recordApiResponse( resTime );
-    utils.logLocal( '[' + stop + '] Api res time: ' + resTime);
+    utils.logLocal( '[' + stop + '-' + start + '] Api res time: ' + resTime);
 }
 
 function addRating(quote,requestToken){
@@ -248,6 +248,7 @@ app.get('/', function(req,res) {
             addRating(quote,requestToken)
             .then( (quote) => {
                 res.render('home', quote);
+                updateApiResponseMetric(start);
             })
             .catch(
                 (err) => {
@@ -255,6 +256,7 @@ app.get('/', function(req,res) {
                     // send th epage anyway but with a -1 rating
                     quote.rating = -1;
                     res.render('home', quote);
+                    updateApiResponseMetric(start);
                 }
             );
         })
@@ -262,6 +264,7 @@ app.get('/', function(req,res) {
             (err) => {
                 utils.log("Internal Error.  Problem getting daily quote. Err: " + err, requestToken);
                 res.status(500).send("Problem getting daily quote.");
+                updateApiResponseMetric(start);
             }
         );
 
@@ -287,12 +290,14 @@ app.get('/random', function(req,res) {
                 quote.today = "";
                 quote.title = "Random Quote";
                 res.render('home', quote);
+                updateApiResponseMetric(start);
             });
         })
         .catch(
             (err) => {
                 utils.log("Internal Error.  Problem getting random quote. Err: " + err, requestToken);
                 res.status(500).send("Problem getting random quote.");
+                updateApiResponseMetric(start);
             }
         );
 
@@ -433,8 +438,6 @@ app.get('/pdf/:id',
         var start = new Date().getTime();
         var requestToken = newReqToken();
         var delay = metrics.getDelay();
-
-        var delay = metrics.getDelay();
         var id = req.params.id;
         utils.log("PDF request for quote id: " + id, requestToken );
         utils.logLocal( '[' + start + '] Service being delayed: ' + delay + 'ms');
@@ -466,8 +469,8 @@ app.get('/pdf/:id',
                                 'Content-Length': buffer.length
                             });
                             res.end(Buffer.from(buffer, 'binary'));
-                            updateApiResponseMetric(start);
                             utils.log("PDF image sent.", requestToken);
+                            updateApiResponseMetric(start);
                         } else {
                             // assume any error will report a 404
                             utils.log("PDF " + id + " not found.", requestToken);

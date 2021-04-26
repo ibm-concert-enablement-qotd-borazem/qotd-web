@@ -3,17 +3,17 @@ const utils = require('./utils.js');
 
 The metrics this app generates are:
 
-qotd_web_api_response_duration_seconds:   the response time in seconds of an API call for application service.  Normally
-                                        this value is between 0.01 and 2.0 seconds.  A value of greater than 2 seconds typically will 
-                                        cause an alert.
+qotd_web_api_response_duration_seconds:     the response time in seconds of an API call for application service.  Normally
+                                            this value is between 0.01 and 2.0 seconds.  A value of greater than 2 seconds typically will 
+                                            cause an alert.
 
-qotd_web_request_duration_seconds_count:  the number of calls that have contributed to the above metric.
+qotd_web_request_duration_seconds_count:    the number of calls that have contributed to the above metric.
 
-qotd_web_memory_usage_bytes:              the number of bytes memory currently being used.  This value is completely faked
+qotd_web_memory_usage_bytes:                the number of bytes memory currently being used.  This value is completely faked
 
-qotd_web_memory_limit_bytes:              total amount of memory this service has.
+qotd_web_memory_limit_bytes:                total amount of memory this service has.
 
-qotd_web_cpu_time_ns:                     the total cpu nano-seconds consumed. This value is completely faked.
+qotd_web_cpu_time_ns:                       the total cpu nano-seconds consumed. This value is completely faked.
 
 
 */
