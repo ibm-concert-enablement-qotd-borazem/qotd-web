@@ -3,3 +3,4 @@ notes.txt
 node_modules/*
 z_*
 .env
+package-lock.json

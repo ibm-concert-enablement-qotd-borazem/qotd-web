@@ -3,17 +3,17 @@ const utils = require('./utils.js');
 
 The metrics this app generates are:
 
-quotes_api_response_duration_seconds:   the response time in seconds of an API call for application service.  Normally
+qotd_web_api_response_duration_seconds:   the response time in seconds of an API call for application service.  Normally
                                         this value is between 0.01 and 2.0 seconds.  A value of greater than 2 seconds typically will 
                                         cause an alert.
 
-quotes_request_duration_seconds_count:  the number of calls that have contributed to the above metric.
+qotd_web_request_duration_seconds_count:  the number of calls that have contributed to the above metric.
 
-quotes_memory_usage_bytes:              the number of bytes memory currently being used.  This value is completely faked
+qotd_web_memory_usage_bytes:              the number of bytes memory currently being used.  This value is completely faked
 
-quotes_memory_limit_bytes:              total amount of memory this service has.
+qotd_web_memory_limit_bytes:              total amount of memory this service has.
 
-quotes_cpu_time_ns:                     the total cpu nano-seconds consumed. This value is completely faked.
+qotd_web_cpu_time_ns:                     the total cpu nano-seconds consumed. This value is completely faked.
 
 
 */
@@ -22,17 +22,17 @@ quotes_cpu_time_ns:                     the total cpu nano-seconds consumed. Thi
 const client = require('prom-client');
 
 // --------------------------------------------------
-// quotes_request_duration_seconds_sum and quotes_request_duration_seconds_count
+// qotd_web_request_duration_seconds_sum and qotd_web_request_duration_seconds_count
 // are not generated from scratch.  Each update is due to an actual api request, 
 // however the actual response time in seconds might be randmonly padded out.
 
 const resDurationSecondsMetric = new client.Counter({
-    name: 'quotes_request_duration_seconds_sum',
+    name: 'qotd_web_request_duration_seconds_sum',
     help: 'Response time in seconds of an API call that this application provides'
 });
 
 const resDurationCountMetric = new client.Counter({
-    name: 'quotes_request_duration_seconds_count',
+    name: 'qotd_web_request_duration_seconds_count',
     help: 'Number of API calls that contribute to this metric'
 });
 
@@ -58,7 +58,7 @@ app.delete('/metric/apiRes', function(req,res) {
     // this is a reset 
     resDurationSecondsMetric.reset();
     resDurationCountMetric.reset();
-    utils.logLocal("Reset quotes_request_duration_seconds_sum and quotes_request_duration_seconds_count.");
+    utils.logLocal("Reset qotd_web_request_duration_seconds_sum and qotd_web_request_duration_seconds_count.");
     res.status(200).send("OK");
 });
 
@@ -75,15 +75,15 @@ app.get('/metric/apiRes', function(req,res) {
 
 
 // --------------------------------------------------
-// quotes_memory_usage_bytes and quotes_memory_usage_bytes
+// qotd_web_memory_usage_bytes and qotd_web_memory_usage_bytes
 
 const memUsageMetric = new client.Gauge({
-    name: 'quotes_memory_usage_bytes',
+    name: 'qotd_web_memory_usage_bytes',
     help: 'Current amount of memory in use (simulated)'
 });
 
 const memLimitMetric = new client.Gauge({
-    name: 'quotes_memory_limit_bytes',
+    name: 'qotd_web_memory_limit_bytes',
     help: 'Memory limit'
 });
 
@@ -105,7 +105,7 @@ setInterval(genMemUsage,1000); // update every second
 
 app.delete('/metric/mem', function(req,res) {
     memOptions = JSON.parse(JSON.stringify(memOptionsFactorySettings));
-    utils.logLocal("Reset quotes_memory_usage_bytes and quotes_memory_limit_bytes.");
+    utils.logLocal("Reset qotd_web_memory_usage_bytes and qotd_web_memory_limit_bytes.");
     res.status(200).send("OK");
 });
 
@@ -122,10 +122,10 @@ app.get('/metric/mem', function(req,res) {
 
 
 // --------------------------------------------------
-// quotes_cpu_time
+// qotd_web_cpu_time
 
 const cpuMetric = new client.Counter({
-    name: 'quotes_cpu_time',
+    name: 'qotd_web_cpu_time',
     help: 'Current sum of cpu seconds (simulated)'
 });
 
@@ -145,7 +145,7 @@ setInterval(genCpuUsage,1000); // update every second
 
 app.delete('/metric/cpu', function(req,res) {
     cpuOptions = JSON.parse(JSON.stringify(cpuOptionsFactorySettings));
-    utils.logLocal("Reset quotes_cpu_time.");
+    utils.logLocal("Reset qotd_web_cpu_time.");
     res.status(200).send("OK");
 });
 

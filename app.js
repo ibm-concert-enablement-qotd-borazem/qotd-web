@@ -3,10 +3,14 @@ const fs = require('fs');
 const http = require('http');
 const moment = require('moment');
 const promMid = require('express-prometheus-middleware');
-const { v4: uuidv4 } = require('uuid');
 
 if( process.env.ENABLE_INSTANA == "true" ) {
     require('@instana/collector')();
+}
+
+var USE_REQ_TOKEN = true;
+if( typeof process.env.USE_REQ_TOKEN != 'undefined' ){
+    USE_REQ_TOKEN = ( process.env.USE_REQ_TOKEN == 'true' || process.env.USE_REQ_TOKEN == 'True' );
 }
 
 var QUOTE_SVC_HOST = 'localhost';
@@ -85,6 +89,14 @@ app.use(promMid({
 // require these AFTER we have defined the express app
 const utils = require('./utils.js');
 const metrics = require('./metrics.js');
+
+function newReqToken(){
+    if( USE_REQ_TOKEN ) {
+        return utils.intBetween(100000, 999999) 
+    } else {
+        return "";
+    }
+}
 
 function updateApiResponseMetric(start){
     var stop = new Date().getTime();
@@ -220,7 +232,7 @@ function getRandomQuote(requestToken){
 app.get('/', function(req,res) {
     var start = new Date().getTime();
     var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-    var requestToken = uuidv4();
+    var requestToken = newReqToken();
     utils.log('Starting new request token: ' + requestToken + ' for IP: ' + ip);
     var delay = metrics.getDelay();
     utils.logLocal( '[' + start + '] Daily quote page being delayed: ' + delay + 'ms');
@@ -260,7 +272,7 @@ app.get('/', function(req,res) {
 app.get('/random', function(req,res) {
     var start = new Date().getTime();
     var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-    var requestToken = uuidv4();
+    var requestToken = newReqToken();
     utils.log('Starting new request token: ' + requestToken + ' for IP: ' + ip);
     var delay = metrics.getDelay();
     utils.logLocal( '[' + start + '] Random quote page being delayed: ' + delay + 'ms');
@@ -293,7 +305,7 @@ app.get('/author/:id', function(req,res) {
     var start = new Date().getTime();
     var id = req.params.id;
     var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-    var requestToken = uuidv4();
+    var requestToken = newReqToken();
     utils.log('Starting new request token: ' + requestToken + ' for IP: ' + ip);
     var delay = metrics.getDelay();
     utils.logLocal( '[' + start + '] Author bio quote page being delayed: ' + delay + 'ms');
@@ -350,11 +362,10 @@ app.get('/author/:id', function(req,res) {
 app.get('/images/:id',
     function (req, res) {
         var start = new Date().getTime();
-        var requestToken = uuidv4();
+        var requestToken = newReqToken();
         var delay = metrics.getDelay();
         var id = req.params.id;
         var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-        var requestToken = uuidv4();
         utils.log('Starting new request token: ' + requestToken + ' for IP: ' + ip);
         utils.log("Author image request id: " + id, requestToken );
         utils.logLocal( '[' + start + '] Service being delayed: ' + delay + 'ms');
@@ -420,7 +431,7 @@ function getDefaultImage(){
 app.get('/pdf/:id',
     function (req, res) {
         var start = new Date().getTime();
-        var requestToken = uuidv4();
+        var requestToken = newReqToken();
         var delay = metrics.getDelay();
 
         var delay = metrics.getDelay();

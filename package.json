@@ -11,8 +11,7 @@
 		"prom-client": "^13.1.0",
 		"moment": "^2.29.1",
 		"express-prometheus-middleware": "^1.1.0",
-		"@instana/collector": "^1.119.2",
-		"uuid": "^8.3.2"
+		"@instana/collector": "^1.119.2"
 	},
 	"repository": {}
 }

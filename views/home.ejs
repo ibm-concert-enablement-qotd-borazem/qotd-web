@@ -18,8 +18,8 @@
   <div class="container">
     <div class="row">
       <div class="col-12">
-          <a href="/"><button class="btn btn-outline-dark float-left">Home</button></a>
-          <a href="/random"><button class="btn btn-outline-dark float-right">Random Quote</button></a>
+          <a id="home_link" href="/"><button class="btn btn-outline-dark float-left">Home</button></a>
+          <a id="random_link" href="/random"><button class="btn btn-outline-dark float-right">Random Quote</button></a>
       </div>
     </div>
   </div>
@@ -32,7 +32,7 @@
       <p class="lead text-muted">
           <i><%=quote%></i>
       </p>
-      <p>- <a href="/author/<%=author_id%>"><%=author%></a></p>
+      <p>- <a id="author_link" href="/author/<%=author_id%>"><%=author%></a></p>
       <p>[<%=genre%>]</p>
       <p>
         <% if( rating < 0 || rating > 10) { %>
@@ -41,13 +41,12 @@
             <img src="/images/<%=rating%>star.png">
         <% } %>      
         
-    
     </p>
     </div>
   </section>
 
   <div class="container" style="padding-top: 100px;">
-    <a href="/pdf/<%=id%>"><img src="/images/pdf.png" width="24"></a>
+    <a id="pdf_link" href="/pdf/<%=id%>"><img src="/images/pdf.png" width="24"></a>
   </div>
 
 </main>
