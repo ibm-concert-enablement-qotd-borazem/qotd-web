@@ -37,8 +37,8 @@ const resDurationCountMetric = new client.Counter({
 });
 
 var apiResOptions = {
-     "min": 1,
-     "max": 20,
+     "min": 500,   // in ms
+     "max": 3000,
      "skew": 1.0
 }
 
@@ -140,9 +140,9 @@ const cpuIdleMetric = new client.Counter({
 });
 
 const cpuOptionsFactorySettings = {
-    "min": 0.1,
-    "max": 0.5,
-    "skew": 0.25
+    "min": 0.25,
+    "max": 0.75,
+    "skew": 1
 }
 var cpuOptions = JSON.parse(JSON.stringify(cpuOptionsFactorySettings));
 
