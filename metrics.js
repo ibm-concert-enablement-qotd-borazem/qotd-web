@@ -18,6 +18,11 @@ qotd_web_cpu_time_ns:                       the total cpu nano-seconds consumed.
 
 */
 
+// get factory default settings
+
+const factorySettings = require('./data/factory_settings.json');
+
+
 // =====================================================================================
 const client = require('prom-client');
 
@@ -36,11 +41,8 @@ const resDurationCountMetric = new client.Counter({
     help: 'Number of API calls that contribute to this metric'
 });
 
-var apiResOptions = {
-     "min": 500,   // in ms
-     "max": 3000,
-     "skew": 1.0
-}
+
+var apiResOptions = JSON.parse(JSON.stringify(factorySettings.api));
 
 function getDelay(){
     // generate a delay in ms, based on current constraints
@@ -87,13 +89,8 @@ const memLimitMetric = new client.Gauge({
     help: 'Memory limit'
 });
 
-const memOptionsFactorySettings = {
-    "min": 1 * 1024 * 1024,
-    "max": 4 * 1024 * 1024,
-    "skew": 1.0,
-    "limit": 4.5 * 1024 * 1024
-}
-var memOptions = JSON.parse(JSON.stringify(memOptionsFactorySettings));
+
+var memOptions = JSON.parse(JSON.stringify(factorySettings.mem));
 
 function genMemUsage(){
     // generate a delay in ms, based on current constraints
@@ -139,12 +136,7 @@ const cpuIdleMetric = new client.Counter({
     help: 'Current sum of idle cpu seconds (simulated)'
 });
 
-const cpuOptionsFactorySettings = {
-    "min": 0.25,
-    "max": 0.75,
-    "skew": 1
-}
-var cpuOptions = JSON.parse(JSON.stringify(cpuOptionsFactorySettings));
+var cpuOptions = JSON.parse(JSON.stringify(factorySettings.cpu));
 
 function genCpuUsage(){
     // generate a delay in ms, based on current constraints
