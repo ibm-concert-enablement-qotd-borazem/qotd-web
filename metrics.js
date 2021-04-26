@@ -149,7 +149,7 @@ var cpuOptions = JSON.parse(JSON.stringify(cpuOptionsFactorySettings));
 function genCpuUsage(){
     // generate a delay in ms, based on current constraints
     var cpu = utils.randn_bm(cpuOptions.min, cpuOptions.max, cpuOptions.skew);
-    if( cpu > cpuOptions.limit ) cpu = cpuOptions.limit;
+    if( cpu > 1 ) cpu = 1;  // 100% usage
     cpuUserMetric.inc( cpu );
     cpuIdleMetric.inc( 1-cpu );
     cpuTotalMetric.inc(1); // the total is user + idle (since these are only two we have just do this simple calculation)
