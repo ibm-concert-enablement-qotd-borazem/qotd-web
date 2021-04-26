@@ -124,24 +124,33 @@ app.get('/metric/mem', function(req,res) {
 // --------------------------------------------------
 // qotd_web_cpu_time
 
-const cpuMetric = new client.Counter({
-    name: 'qotd_web_cpu_time',
+const cpuTotalMetric = new client.Counter({
+    name: 'qotd_web_cpu_seconds_total',
+    help: 'Current sum of cpu seconds (simulated)'
+});
+
+const cpuUserMetric = new client.Counter({
+    name: 'qotd_web_cpu_user_seconds_total',
     help: 'Current sum of cpu seconds (simulated)'
 });
 
 const cpuOptionsFactorySettings = {
-    "min": 0.001,
-    "max": 0.002,
-    "skew": 1.0
+    "min": 0.1,
+    "max": 0.5,
+    "skew": 0.25,
+    "limit": 1.0
 }
 var cpuOptions = JSON.parse(JSON.stringify(cpuOptionsFactorySettings));
 
 function genCpuUsage(){
     // generate a delay in ms, based on current constraints
     var cpu = utils.randn_bm(cpuOptions.min, cpuOptions.max, cpuOptions.skew);
+    if( cpu > cpuOptions.limit ) cpu = cpuOptions.limit;
     cpuMetric.inc( cpu );
+    cpuUserMetric.set(cpuOptions.limit);
+    cpuTotalMetric.set(1-cpuOptions.limit); // the total is user + idle (since these are only two we have just do this simple calculation)
 }
-setInterval(genCpuUsage,1000); // update every second
+setInterval(genCpuUsage,1000); // update every second - this correlates with cpu options limit and total metric calculation above
 
 app.delete('/metric/cpu', function(req,res) {
     cpuOptions = JSON.parse(JSON.stringify(cpuOptionsFactorySettings));
