@@ -49,8 +49,8 @@ function getDelay(){
 exports.getDelay = getDelay;
 
 function recordApiResponse(time){
-    resDurationSecondsMetric.inc();
-    resDurationCountMetric.inc(time);
+    resDurationCountMetric.inc();
+    resDurationSecondsMetric.inc(time);
 }
 exports.recordApiResponse = recordApiResponse;
 
