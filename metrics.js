@@ -57,9 +57,7 @@ function recordApiResponse(time){
 exports.recordApiResponse = recordApiResponse;
 
 app.delete('/metric/apiRes', function(req,res) {
-    // this is a reset 
-    resDurationSecondsMetric.reset();
-    resDurationCountMetric.reset();
+    apiResOptions = JSON.parse(JSON.stringify(factorySettings.api));
     utils.logLocal("Reset qotd_web_request_duration_seconds_sum and qotd_web_request_duration_seconds_count.");
     res.status(200).send("OK");
 });
