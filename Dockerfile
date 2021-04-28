@@ -14,6 +14,6 @@ COPY data ./data
 
 RUN npm install
 
-EXPOSE 3000
+EXPOSE 3000 8080
 
 CMD ["node", "app.js"]
