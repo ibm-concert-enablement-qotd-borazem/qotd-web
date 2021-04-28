@@ -547,6 +547,7 @@ http.createServer(async function (req, res) {
         res.writeHead(200, { 'Content-Type': 'text/plain' });
         res.write('OK');
     } else {
+        utils.log(`Service action method: ${req.method}`);
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.write('Unknown request');
     }
