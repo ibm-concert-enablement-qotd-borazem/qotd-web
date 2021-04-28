@@ -68,25 +68,9 @@ app.set('port', process.env.PORT || 3000);
 app.enable('trust proxy');
 
 app.use(express.static(__dirname + '/public'));
-app.use(express.urlencoded({
-    extended: true
-}));
 app.use(express.json());
-app.use(promMid({
-    metricsPath: '/metrics',
-    collectDefaultMetrics: true,
-    requestDurationBuckets: [0.1, 0.5, 1, 1.5],
-    /**
-     * Can add custom labels with customLabels and transformLabels options
-     */
-    customLabels: ['contentType'],
-    transformLabels(labels, req) {
-        // eslint-disable-next-line no-param-reassign
-        labels.contentType = req.headers['content-type'];
-    }
-}));
+app.use(promMid());
 
-serviceRunning = false;
 
 // require these AFTER we have defined the express app
 const utils = require('./utils.js');
@@ -124,7 +108,7 @@ function addRating(quote, requestToken) {
                 rawData.push(chunk);
             });
             ratingRes.on('end', () => {
-                utils.logLocal(`Quote svc response: ${ratingRes.statusCode}`);
+                utils.logLocal(`Rating svc response: ${ratingRes.statusCode}`);
 
                 if (ratingRes.statusCode == 200) {
                     utils.log('Got rating for quote: ' + quote.id, requestToken);
@@ -435,10 +419,6 @@ app.get('/images/:id',
     }
 );
 
-function getDefaultImage() {
-
-}
-
 app.get('/pdf/:id',
     function (req, res) {
         var start = new Date().getTime();
@@ -499,27 +479,7 @@ app.get('/pdf/:id',
 // global
 serviceRunning = true;
 
-// general commands to the service (i.e. stop, crash ...)
-app.put('/service', function (req, res) {
-    utils.log(`Service request: ${req.body}`);
-    var cmd = req.body.action;
-    switch (cmd) {
-        case 'STOP': {
-            serviceRunning = false;
-            break;
-        }
-        case 'START': {
-            serviceRunning = true;
-            break;
-        }
-        case 'CRASH': {
-            crash();
-            break;
-        }
-    }
-    res.status(200).send('OK');
-}
-);
+
 
 function crash() {
     utils.log("Aaaaah!");
@@ -544,9 +504,33 @@ const appName = package.name;
 const appVersion = package.version;
 const buildInfo = fs.readFileSync('build.txt');
 
-app.listen(app.get('port'), '0.0.0.0', function () {
-    console.log(`Starting ${appName} v${appVersion}, ${buildInfo} on port ${app.get('port')}`);
+var service = app.listen(app.get('port'), '0.0.0.0', function () {
+    utils.logLocal(`Starting ${appName} v${appVersion}, ${buildInfo} on port ${app.get('port')}`);
 });
 
+function startService() {
+    service = app.listen(app.get('port'), '0.0.0.0', function () {
+        utils.logLocal(`Starting ${appName} v${appVersion}, ${buildInfo} on port ${app.get('port')}`);
+    });
+}
 
+http.createServer(function (req, res) {
+    if (req.method == "DELETE") {
+        utils.log(`Service action: Stopping ${appName} Service`);
+        service.close();
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.write('OK');
+    } else if (req.method == "POST") {
+        utils.log(`Service action: Restaring ${appName} Service`);
+        startService();
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.write('OK');
+    } else {
+        utils.log(`Service action: ${req.method}`);
+        res.writeHead(400, { 'Content-Type': 'text/plain' });
+        res.write('UNKNOWN ACTION');
+    }
+
+    res.end();
+}).listen(8080);
 
