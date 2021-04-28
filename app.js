@@ -476,11 +476,6 @@ app.get('/pdf/:id',
     }
 );
 
-// global
-serviceRunning = true;
-
-
-
 function crash() {
     utils.log("Aaaaah!");
     // set up timer to crash after 3 seconds 
@@ -489,7 +484,7 @@ function crash() {
         process.nextTick(function () {
             throw new Error;
         });
-    }, 3000);
+    }, 4000);
 }
 
 app.get('/version',
@@ -505,8 +500,10 @@ const appVersion = package.version;
 const buildInfo = fs.readFileSync('build.txt');
 
 var service = app.listen(app.get('port'), '0.0.0.0', function () {
-    utils.logLocal(`Starting ${appName} v${appVersion}, ${buildInfo} on port ${app.get('port')}`);
+    console.log(`Starting ${appName} v${appVersion}, ${buildInfo} on port ${app.get('port')}`);
 });
+
+var service;
 
 function startService() {
     service = app.listen(app.get('port'), '0.0.0.0', function () {
@@ -514,23 +511,47 @@ function startService() {
     });
 }
 
-http.createServer(function (req, res) {
-    if (req.method == "DELETE") {
-        utils.log(`Service action: Stopping ${appName} Service`);
-        service.close();
-        res.writeHead(200, { 'Content-Type': 'text/plain' });
-        res.write('OK');
-    } else if (req.method == "POST") {
-        utils.log(`Service action: Restaring ${appName} Service`);
-        startService();
+function getPostData(req) {
+	return new Promise((resolve, reject) => {
+		try {
+			let body = '';
+			req.on('data', (chunk) => {
+				body += chunk.toString();
+			});
+			req.on('end', () => {
+				resolve(body);
+			});
+		} catch (error) {
+			reject(error);
+		}
+	});
+}
+
+http.createServer(async function (req, res) {
+    if (req.method == "POST") {
+        var data = await getPostData(req);
+        var obj = JSON.parse(data);
+        utils.log(`Service action: ${obj.action}`);
+        switch( obj.action ){
+            case 'crash': {
+                crash();
+                break;
+            }
+            case 'start': {
+                if( !server.listening ) startService();
+                break;
+            }
+            case 'stop': {
+                if( server.listening ) service.close();
+                break;
+            }
+        }
         res.writeHead(200, { 'Content-Type': 'text/plain' });
         res.write('OK');
     } else {
-        utils.log(`Service action: ${req.method}`);
-        res.writeHead(400, { 'Content-Type': 'text/plain' });
-        res.write('UNKNOWN ACTION');
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.write('Unknown request');
     }
-
     res.end();
-}).listen(8080);
-
+}).listen(process.env.SVC_ACTIONS_PORT);
+console.log(`Listening for service actions on ${process.env.SVC_ACTIONS_PORT}`);
