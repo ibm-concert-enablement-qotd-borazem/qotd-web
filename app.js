@@ -527,6 +527,8 @@ function getPostData(req) {
 	});
 }
 
+const svcActionPort = ( process.env.SVC_ACTIONS_PORT || 8080 );
+
 http.createServer(async function (req, res) {
     if (req.method == "POST") {
         var data = await getPostData(req);
@@ -553,5 +555,5 @@ http.createServer(async function (req, res) {
         res.write('Unknown request');
     }
     res.end();
-}).listen(process.env.SVC_ACTIONS_PORT);
-console.log(`Listening for service actions on ${process.env.SVC_ACTIONS_PORT}`);
+}).listen(svcActionPort);
+console.log(`Listening for service actions on ${svcActionPort}`);

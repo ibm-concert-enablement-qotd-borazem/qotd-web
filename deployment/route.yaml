@@ -13,3 +13,19 @@ spec:
   port:
     targetPort: http
   wildcardPolicy: None
+---
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: qotd-web-svc
+  labels:
+    app: qotd
+spec:
+  subdomain: ''
+  to:
+    kind: Service
+    name: qotd-web-svc
+    weight: 100
+  port:
+    targetPort: http
+  wildcardPolicy: None
