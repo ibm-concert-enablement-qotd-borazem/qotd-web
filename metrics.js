@@ -93,13 +93,14 @@ var memOptions = JSON.parse(JSON.stringify(factorySettings.mem));
 function genMemUsage(){
     // generate a delay in ms, based on current constraints
     var mem = utils.randn_bm(memOptions.min, memOptions.max, memOptions.skew);
+    if( mem > memOptions.limit ) mem = memOptions.limit;
     memUsageMetric.set( mem );
     memLimitMetric.set( memOptions.limit) ;
 }
 setInterval(genMemUsage,1000); // update every second
 
 app.delete('/metric/mem', function(req,res) {
-    memOptions = JSON.parse(JSON.stringify(memOptionsFactorySettings));
+    memOptions = JSON.parse(JSON.stringify(factorySettings.mem));
     utils.logLocal("Reset qotd_web_memory_usage_bytes and qotd_web_memory_limit_bytes.");
     res.status(200).send("OK");
 });
