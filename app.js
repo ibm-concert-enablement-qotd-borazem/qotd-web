@@ -216,10 +216,6 @@ function getRandomQuote(requestToken) {
 }
 
 app.get('/', function (req, res) {
-    if (!serviceRunning) {
-        res.status(500).send("Not available");
-        return;
-    }
     var start = new Date().getTime();
     var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     var requestToken = newReqToken();

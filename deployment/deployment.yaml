@@ -24,13 +24,14 @@ spec:
             - name: http
               containerPort: 3000
               protocol: TCP
+            - name: svc
+              containerPort: 8080
+              protocol: TCP
           env:
-            - name: PORT
-              value: "3000"
             - name: LOCAL_LOGGING
               value: "false"
             - name: ENABLE_INSTANA
-              value: "false"
+              value: "true"
             - name: QUOTE_SVC_HOST
               value: "qotd-quote.qotd.svc.cluster.local"
             - name: QUOTE_SVC_PORT
