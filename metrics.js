@@ -148,7 +148,7 @@ function genCpuUsage(){
 setInterval(genCpuUsage,1000); // update every second - this correlates with cpu options limit and total metric calculation above
 
 app.delete('/metric/cpu', function(req,res) {
-    cpuOptions = JSON.parse(JSON.stringify(cpuOptionsFactorySettings));
+    cpuOptions = JSON.parse(JSON.stringify(factorySettings.cpu));
     utils.logLocal("Reset qotd_web_cpu_time.");
     res.status(200).send("OK");
 });
