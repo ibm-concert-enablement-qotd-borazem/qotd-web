@@ -31,7 +31,7 @@ spec:
             - name: LOCAL_LOGGING
               value: "false"
             - name: ENABLE_INSTANA
-              value: "true"
+              value: "false"
             - name: QUOTE_SVC_HOST
               value: "qotd-quote.qotd.svc.cluster.local"
             - name: QUOTE_SVC_PORT

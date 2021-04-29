@@ -27,5 +27,5 @@ spec:
     name: qotd-web-svc
     weight: 100
   port:
-    targetPort: http
+    targetPort: svc
   wildcardPolicy: None
