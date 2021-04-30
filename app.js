@@ -8,58 +8,23 @@ if (process.env.ENABLE_INSTANA == "true") {
     require('@instana/collector')();
 }
 
-var USE_REQ_TOKEN = true;
+USE_REQ_TOKEN = true;
 if (typeof process.env.USE_REQ_TOKEN != 'undefined') {
     USE_REQ_TOKEN = (process.env.USE_REQ_TOKEN == 'true' || process.env.USE_REQ_TOKEN == 'True');
 }
 
-var QUOTE_SVC_HOST = 'localhost';
-if (process.env.QUOTE_SVC_HOST) {
-    // override for iamge service url
-    QUOTE_SVC_HOST = process.env.QUOTE_SVC_HOST;
-}
+QUOTE_SVC_HOST = process.env.QUOTE_SVC_HOST;
+QUOTE_SVC_PORT = process.env.QUOTE_SVC_PORT;
 
-var QUOTE_SVC_PORT = 3001;
-if (process.env.QUOTE_SVC_PORT) {
-    // override for iamge service url
-    QUOTE_SVC_PORT = parseInt(process.env.QUOTE_SVC_PORT);
-}
+AUTHOR_SVC_HOST = process.env.AUTHOR_SVC_HOST;
+AUTHOR_SVC_PORT = parseInt(process.env.AUTHOR_SVC_PORT);
 
-var AUTHOR_SVC_HOST = 'localhost';
-if (process.env.AUTHOR_SVC_HOST) {
-    // override for iamge service url
-    AUTHOR_SVC_HOST = process.env.AUTHOR_SVC_HOST;
-}
+RATING_SVC_HOST = process.env.RATING_SVC_HOST;
+RATING_SVC_PORT = parseInt(process.env.RATING_SVC_PORT);
 
-var AUTHOR_SVC_PORT = 3002;
-if (process.env.AUTHOR_SVC_PORT) {
-    // override for iamge service url
-    AUTHOR_SVC_PORT = parseInt(process.env.AUTHOR_SVC_PORT);
-}
+PDF_SVC_HOST = process.env.PDF_SVC_HOST;
+PDF_SVC_PORT = parseInt(process.env.PDF_SVC_PORT);
 
-var RATING_SVC_HOST = 'localhost';
-if (process.env.RATING_SVC_HOST) {
-    // override for iamge service url
-    RATING_SVC_HOST = process.env.RATING_SVC_HOST;
-}
-
-var RATING_SVC_PORT = 3004;
-if (process.env.RATING_SVC_PORT) {
-    // override for iamge service url
-    RATING_SVC_PORT = parseInt(process.env.RATING_SVC_PORT);
-}
-
-var PDF_SVC_HOST = 'localhost';
-if (process.env.PDF_SVC_HOST) {
-    // override for iamge service url
-    PDF_SVC_HOST = process.env.PDF_SVC_HOST;
-}
-
-var PDF_SVC_PORT = 3005;
-if (process.env.PDF_SVC_PORT) {
-    // override for iamge service url
-    PDF_SVC_PORT = parseInt(process.env.PDF_SVC_PORT);
-}
 app = express();
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
@@ -71,6 +36,8 @@ app.use(express.static(__dirname + '/public'));
 app.use(express.json());
 app.use(promMid());
 
+//----------------------------------------------------------------------------------------------
+// Main app
 
 // require these AFTER we have defined the express app
 const utils = require('./utils.js');
@@ -291,7 +258,6 @@ app.get('/random', function (req, res) {
 
 });
 
-
 app.get('/author/:id', function (req, res) {
     var start = new Date().getTime();
     var id = req.params.id;
@@ -348,7 +314,6 @@ app.get('/author/:id', function (req, res) {
 
     }, delay);
 });
-
 
 app.get('/images/:id',
     function (req, res) {
@@ -472,16 +437,38 @@ app.get('/pdf/:id',
     }
 );
 
-function crash() {
-    utils.log("Aaaaah!");
-    // set up timer to crash after 3 seconds 
-    setTimeout(function () {
-        // process.exit(-1);  // produces simpler clear log entries than uncaught exception
-        process.nextTick(function () {
-            throw new Error;
-        });
-    }, 4000);
-}
+
+//----------------------------------------------------------------------------------------------
+// Logging
+
+const logger = require('./logger.js');
+
+app.post('/logger',
+    function (req, res) {
+        var logTemplate = req.body;
+
+        if( typeof logTemplate.repeat == 'undefined' ) {
+            // one time log
+            var log = logger.genLog(logTemplate);
+            utils.log(log);
+        } else {
+            logger.addLogger(logTemplate);
+        }
+        res.status(200).send("OK");
+    }
+);
+
+app.delete('/logger/:id',
+    function (req, res) {
+        var id = req.params.id;
+        logger.removeLogger(id);
+        utils.logLocal( "DELETE Logger id: " + id  ); 
+        res.status(200).send("OK");
+    }
+);
+
+//----------------------------------------------------------------------------------------------
+// Main App
 
 app.get('/version',
     function (req, res) {
@@ -499,7 +486,19 @@ var service = app.listen(app.get('port'), '0.0.0.0', function () {
     console.log(`Starting ${appName} v${appVersion}, ${buildInfo} on port ${app.get('port')}`);
 });
 
-var service;
+//----------------------------------------------------------------------------------------------
+// Service Actions
+
+function crash() {
+    utils.log("Aaaaah!");
+    // set up timer to crash after 3 seconds 
+    setTimeout(function () {
+        // process.exit(-1);  // produces simpler clear log entries than uncaught exception
+        process.nextTick(function () {
+            throw new Error;
+        });
+    }, 4000);
+}
 
 function startService() {
     service = app.listen(app.get('port'), '0.0.0.0', function () {
