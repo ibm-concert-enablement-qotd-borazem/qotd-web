@@ -1,10 +1,8 @@
-const moment = require('moment');
 
 var localLogging = false;
 if( typeof process.env.LOCAL_LOGGING != 'undefined' ){
     localLogging = ( process.env.LOCAL_LOGGING == 'true' || process.env.LOCAL_LOGGING == 'True' );
 }
-
 
 function intBetween(min, max) {  
     // between x and y exclusive
@@ -42,40 +40,64 @@ function pickWeighted(options){
 
 exports.pickWeighted = pickWeighted;
 
-function log(msg, token){
-    if( typeof token == 'undefined' || token == "") {
-        console.log(msg);
-    } else {
-        console.log(`[${token}] ${msg}`);
-    }
+function log(msg){
+    console.log(msg);
 }
 
 exports.log = log;
 
 function logLocal(msg){
     if( localLogging ) {
-        var ts = new moment().toISOString();
-        console.log('[Log Generator] ' + ts + ' "' + msg + '"');
+        console.log('[LOCAL] ' + msg );
     }
 }
 
 exports.logLocal = logLocal;
 
 // see: https://stackoverflow.com/questions/25582882/javascript-math-random-normal-distribution-gaussian-bell-curve/36481059#36481059
-function randn_bm(min, max, skew) {
+function nextBoxMuller(){
     let u = 0, v = 0;
     while(u === 0) u = Math.random(); //Converting [0,1) to (0,1)
     while(v === 0) v = Math.random();
     let num = Math.sqrt( -2.0 * Math.log( u ) ) * Math.cos( 2.0 * Math.PI * v );
-
-    num = num / 10.0 + 0.5; // Translate to 0 -> 1
-    if (num > 1 || num < 0) num = randn_bm(min, max, skew); // resample between 0 and 1 if out of range
-    num = Math.pow(num, skew); // Skew
-    num *= max - min; // Stretch to fill range
-    num += min; // offset to min
-    return num;
+    num = num / 10.0; // Translate to 0 -> 1
+    if (num > 0.5 || num < -0.5) return nextBoxMuller() // resample between 0 and 1 
+    return num;   
 }
 
-exports.randn_bm = randn_bm;
+// convert the normal random value from BM to one with 
+// the given mean and stdev.  Also if a min and max are 
+// supplied, throw out any values out side this range.
+function genNormal(mean, stdev, min, max){
+    var num = nextBoxMuller();
+    var val = stdev * num + mean;
+    if( typeof min != 'undefined' ) {
+        while( val < min ) {
+            num = nextBoxMuller();
+            val = stdev * num + mean;
+        }
+    }
+    if( typeof max != 'undefined' ) {
+        while( val > max ) {
+            num = nextBoxMuller();
+            val = stdev * num + mean;
+        }
+    }
+    return val;
+}
+exports.genNormal = genNormal;
 
 
+function genNormalInt(mean, stdev, min, max){
+    return Math.floor(genNormal(mean,stdev,min, max));
+}
+exports.genNormalInt = genNormalInt;
+
+
+function replaceAll(key, value, string) {
+    const field = "{{" + key + "}}";
+    const replacer = new RegExp(field, 'g');
+    return string.replace(replacer, value);
+}
+
+exports.replaceAll = replaceAll;
