@@ -71,17 +71,10 @@ function nextBoxMuller(){
 function genNormal(mean, stdev, min, max){
     var num = nextBoxMuller();
     var val = stdev * num + mean;
-    if( typeof min != 'undefined' ) {
-        while( val < min ) {
-            num = nextBoxMuller();
-            val = stdev * num + mean;
-        }
-    }
-    if( typeof max != 'undefined' ) {
-        while( val > max ) {
-            num = nextBoxMuller();
-            val = stdev * num + mean;
-        }
+    if( typeof min != 'undefined' && val < min ) {
+        val = min
+    } else if( typeof max != 'undefined' && val > max ) {
+       val = max;
     }
     return val;
 }
