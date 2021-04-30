@@ -4,4 +4,3 @@ node_modules/*
 z_*
 .env
 package-lock.json
-package-lock.json
