@@ -16,10 +16,17 @@ spec:
         app: qotd-web
     spec:
       restartPolicy: Always
+      volumes:
+        - name: settings
+          configMap:
+            name: qotd-web-factory-settings
       containers:
         - name: qotd-web
           image: registry.gitlab.com/quote-of-the-day/qotd-web:latest
           imagePullPolicy: Always
+          volumeMounts:
+            - name: settings
+              mountPath: /app/data
           ports:
             - name: http
               containerPort: 3000
@@ -48,3 +55,16 @@ spec:
               value: "qotd-pdf.qotd.svc.cluster.local"
             - name: PDF_SVC_PORT
               value: "3005"
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: qotd-web-factory-settings
+  namespace: qotd
+data:
+  factory_settings.json: |-
+    {
+        "api": {"mean": 100, "stdev": 200, "min":10,"max":400},
+        "cpu": {"mean": 0.35, "stdev": 0.2, "min":0,"max":1},
+        "mem": {"mean": 2548570, "stdev": 500000, "min":204857, "max":4718592}
+    }

@@ -1,5 +1,5 @@
 {
     "api": {"mean": 100, "stdev": 200, "min":10,"max":400},
     "cpu": {"mean": 0.4, "stdev": 2, "min":0,"max":1},
-    "mem": {"mean": 2048570, "stdev": 1000, "min":104857, "max":4718592}
+    "mem": {"mean": 2048570, "stdev": 500000, "min":104857, "max":4718592}
 }

@@ -535,11 +535,11 @@ http.createServer(async function (req, res) {
                 break;
             }
             case 'start': {
-                if( !server.listening ) startService();
+                if( !service.listening ) startService();
                 break;
             }
             case 'stop': {
-                if( server.listening ) service.close();
+                if( service.listening ) service.close();
                 break;
             }
         }
