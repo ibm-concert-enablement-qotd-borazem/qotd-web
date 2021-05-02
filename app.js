@@ -42,6 +42,7 @@ app.use(promMid());
 // require these AFTER we have defined the express app
 const utils = require('./utils.js');
 const metrics = require('./metrics.js');
+const logger = require('./logger.js');
 
 function newReqToken() {
     if (USE_REQ_TOKEN) {

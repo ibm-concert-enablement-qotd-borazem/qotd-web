@@ -41,7 +41,7 @@ const resDurationCountMetric = new client.Counter({
 
 var apiResOptions = JSON.parse(JSON.stringify(factorySettings.api));
 
-function getDelay(){
+function getDelay() {
     var mean = apiResOptions.mean;
     var stdev = apiResOptions.stdev;
     var min = apiResOptions.min;
@@ -50,26 +50,54 @@ function getDelay(){
 }
 exports.getDelay = getDelay;
 
-function recordApiResponse(time){
+function recordApiResponse(time) {
     resDurationCountMetric.inc();
     resDurationSecondsMetric.inc(time);
 }
 exports.recordApiResponse = recordApiResponse;
 
-app.delete('/metric/apiRes', function(req,res) {
+app.delete('/metric/apiRes', function (req, res) {
     apiResOptions = JSON.parse(JSON.stringify(factorySettings.api));
     utils.logLocal("DELETE /metric/apiRes ");
     res.status(200).send("OK");
 });
 
-app.put('/metric/apiRes', function(req,res) {
+var apiRampInterval;
+
+function updateApiOptions(slope, target) {
+    apiResOptions.mean += slope;
+    if( apiResOptions.mean >= target ) {
+        apiResOptions.mean = target;
+        clearInterval(apiRampInterval);
+        apiRampInterval = null;
+    }
+}
+
+app.put('/metric/apiRes', function (req, res) {
     // todo: validation
-    utils.logLocal("PUT /metric/apiRes " + JSON.stringify(req.body) );
-    apiResOptions = req.body;
+    utils.logLocal("PUT /metric/apiRes " + JSON.stringify(req.body));
+    var ramp = req.query.ramp;
+    if( typeof ramp == 'undefined' ) {
+        if( apiRampInterval ) {
+            clearInterval(apiRampInterval);
+            apiRampInterval = null;
+        }
+        apiResOptions = req.body;
+    } else {
+        // incrementaly change the mean (up or down) over the 
+        var currentMean = apiResOptions.mean;
+        var targetMean = req.body.mean;
+        var overPeriodOfTime = ramp;
+        var slope = (targetMean - currentMean) / overPeriodOfTime;
+        var period = 1000; // change every 1s - roughtly corresponds to polling period
+        req.body.mean = currentMean;
+        apiResOptions = req.body;
+        apiRampInterval = setInterval(updateApiOptions, period, slope, targetMean);
+    }
     res.status(200).end("OK");
 });
 
-app.get('/metric/apiRes', function(req,res) {
+app.get('/metric/apiRes', function (req, res) {
     res.json(apiResOptions);
 });
 
@@ -89,7 +117,7 @@ const memLimitMetric = new client.Gauge({
 
 var memOptions = JSON.parse(JSON.stringify(factorySettings.mem));
 
-function genMemUsage(){
+function genMemUsage() {
     var mean = memOptions.mean;
     var stdev = memOptions.stdev;
     var min = memOptions.min;
@@ -98,23 +126,50 @@ function genMemUsage(){
     memUsageMetric.set(mem);
     memLimitMetric.set(max);
 }
-setInterval(genMemUsage,1000); // update every second
+setInterval(genMemUsage, 1000); // update every second
 
-app.delete('/metric/mem', function(req,res) {
+app.delete('/metric/mem', function (req, res) {
     memOptions = JSON.parse(JSON.stringify(factorySettings.mem));
-    utils.logLocal("DELETE /metric/mem " );
+    utils.logLocal("DELETE /metric/mem ");
     res.status(200).send("OK");
 });
 
-app.put('/metric/mem', function(req,res) {
-    // updte the generated delay in service response time.
+var memRampInterval;
+
+function updateMemOptions(slope, target) {
+    memOptions.mean += slope;
+    if( memOptions.mean >= target ) {
+        memOptions.mean = target;
+        clearInterval(memRampInterval);
+        memRampInterval = null;
+    }
+}
+
+app.put('/metric/mem', function (req, res) {
     // todo: validation
-    utils.logLocal("PUT /metric/mem " + JSON.stringify(req.body) );
-    memOptions = req.body;
+    utils.logLocal("PUT /metric/mem " + JSON.stringify(req.body));
+    var ramp = req.query.ramp;
+    if( typeof ramp == 'undefined' ) {
+        if( memRampInterval ) {
+            clearInterval(memRampInterval);
+            memRampInterval = null;
+        }
+        memOptions = req.body;
+    } else {
+        // incrementaly change the mean (up or down) over the 
+        var currentMean = memOptions.mean;
+        var targetMean = req.body.mean;
+        var overPeriodOfTime = ramp;
+        var slope = (targetMean - currentMean) / overPeriodOfTime;
+        var period = 1000; // change every 1s - roughtly corresponds to polling period
+        req.body.mean = currentMean;
+        memOptions = req.body;
+        memRampInterval = setInterval(updateMemOptions, period, slope, targetMean);
+    }
     res.status(200).end("OK");
 });
 
-app.get('/metric/mem', function(req,res) {
+app.get('/metric/mem', function (req, res) {
     res.json(memOptions);
 });
 
@@ -139,34 +194,62 @@ const cpuIdleMetric = new client.Counter({
 
 var cpuOptions = JSON.parse(JSON.stringify(factorySettings.cpu));
 
-function genCpuUsage(){
+function genCpuUsage() {
     // generate a delay in ms, based on current constraints
     var mean = cpuOptions.mean;
     var stdev = cpuOptions.stdev;
     var min = cpuOptions.min;
     var max = cpuOptions.max;
     var cpu = utils.genNormal(mean, stdev, min, max);
-    cpuUserMetric.inc( cpu );
-    cpuIdleMetric.inc( 1-cpu );
+    cpuUserMetric.inc(cpu);
+    cpuIdleMetric.inc(1 - cpu);
     cpuTotalMetric.inc(1); // the total is user + idle (since these are only two we have just do this simple calculation)
 }
-setInterval(genCpuUsage,1000); // update every second - this correlates with cpu options limit and total metric calculation above
+setInterval(genCpuUsage, 1000); // update every second - this correlates with cpu options limit and total metric calculation above
 
 
-app.delete('/metric/cpu', function(req,res) {
+app.delete('/metric/cpu', function (req, res) {
     utils.logLocal("DELETE /metric/cpu ");
     cpuOptions = JSON.parse(JSON.stringify(factorySettings.cpu));
     res.status(200).send("OK");
 });
 
-app.put('/metric/cpu', function(req,res) {
+var cpuRampInterval;
+
+function updateCpuOptions(slope, target) {
+    cpuOptions.mean += slope;
+    if( cpuOptions.mean >= target ) {
+        cpuOptions.mean = target;
+        clearInterval(cpuRampInterval);
+        cpuRampInterval = null;
+    }
+}
+
+app.put('/metric/cpu', function (req, res) {
     // todo: validation
-    utils.logLocal("PUT /metric/cpu " + JSON.stringify(req.body) );
-    cpuOptions = req.body;
+    utils.logLocal("PUT /metric/cpu " + JSON.stringify(req.body));
+    var ramp = req.query.ramp;
+    if( typeof ramp == 'undefined' ) {
+        if( cpuRampInterval ) {
+            clearInterval(cpuRampInterval);
+            cpuRampInterval = null;
+        }
+        cpuOptions = req.body;
+    } else {
+        // incrementaly change the mean (up or down) over the 
+        var currentMean = cpuOptions.mean;
+        var targetMean = req.body.mean;
+        var overPeriodOfTime = ramp;
+        var slope = (targetMean - currentMean) / overPeriodOfTime;
+        var period = 1000; // change every 1s - roughtly corresponds to polling period
+        req.body.mean = currentMean;
+        cpuOptions = req.body;
+        cpuRampInterval = setInterval(updateCpuOptions, period, slope, targetMean);
+    }
     res.status(200).end("OK");
 });
 
-app.get('/metric/cpu', function(req,res) {
+app.get('/metric/cpu', function (req, res) {
     res.json(cpuOptions);
 });
 
@@ -176,3 +259,4 @@ function resetToFactorySettings(){
     cpuOptions = JSON.parse(JSON.stringify(factorySettings.cpu));
 }
 exports.resetToFactorySettings = resetToFactorySettings;
+
