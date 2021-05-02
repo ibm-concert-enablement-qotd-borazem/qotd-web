@@ -478,7 +478,7 @@ app.get('/version',
 
 app.post('/reset', function(req,res){
     metrics.resetToFactorySettings();
-    getLogger.resetToFactorySettings();
+    logger.resetToFactorySettings();
     res.send("OK");
 });
 
