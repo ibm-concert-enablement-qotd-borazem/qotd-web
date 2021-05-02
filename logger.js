@@ -1,6 +1,7 @@
 const faker = require('faker');
 const moment = require('moment');
 const utils = require('./utils.js');
+const fs = require('fs');
 
 function genValue(field) {
     var type = field.type;
@@ -85,14 +86,17 @@ exports.addLogger = addLogger;
 
 function runLogger(loggerId) {
     var logger = activeLoggers[loggerId];
-    var logEntry = genLog(logger);
-    utils.log(logEntry);
-    var repeat = logger.repeat;
-    var time = utils.genNormalInt(repeat.mean,repeat.stdev,repeat.min,repeat.max);
-    timers[logger.id] = setTimeout( runLogger, time, loggerId);
+    if( logger ) {
+        var logEntry = genLog(logger);
+        utils.log(logEntry);
+        var repeat = logger.repeat;
+        var time = utils.genNormalInt(repeat.mean,repeat.stdev,repeat.min,repeat.max);
+        timers[logger.id] = setTimeout( runLogger, time, loggerId);    
+    }
 }
 
 function removeLogger(loggerId) {
+    utils.logLocal('Removing logger');
     clearTimeout(timers[loggerId]);
     delete timers[loggerId];
     delete activeLoggers[loggerId];
@@ -108,7 +112,7 @@ function genLog(logger) {
         var value = genValue(field);
         template = replaceAll(fieldName, value, template);
     }
-    return template;
+    return template;    
 }
 exports.genLog = genLog;
 
