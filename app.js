@@ -75,7 +75,7 @@ function addRating(quote, requestToken) {
                 rawData.push(chunk);
             });
             ratingRes.on('end', () => {
-                utils.logLocal(`Rating svc response: ${ratingRes.statusCode}`);
+                utils.logLocal(`Rating svc response http://${options.hostname}:${options.port}${options.path}: ${ratingRes.statusCode}`);
 
                 if (ratingRes.statusCode == 200) {
                     utils.log('Got rating for quote: ' + quote.id, requestToken);
@@ -84,18 +84,17 @@ function addRating(quote, requestToken) {
                     quote.rating = rating.rating;
                     resolve(quote);
                 } else {
-                    utils.log('Rejecting rating for quote: ' + quote.id + ' Rating status code: ' + ratingRes.statusCode, requestToken);
                     reject(ratingRes.statusCode);
                 }
             });
-
-
         })
-            .on('error', error => {
-                utils.log('Rejecting rating for quote: ' + quote.id + ' Error: ' + error, requestToken);
-                reject(error);
-            })
-            .end();
+        .on('error', error => {
+            reject(error);
+        })
+        .end();
+    })
+    .catch((error) => {
+        utils.log(`Rejecting addRating. Error: ${error}`, requestToken);
     });
 }
 
@@ -118,7 +117,7 @@ function getDailyQuote(requestToken) {
                 rawData.push(chunk);
             });
             quoteRes.on('end', () => {
-                utils.logLocal(`Quote svc response: ${quoteRes.statusCode}`);
+                utils.logLocal(`Quote svc response http://${options.hostname}:${options.port}${options.path}: ${quoteRes.statusCode}`);
 
                 if (quoteRes.statusCode == 200) {
                     utils.log('Obtained daily quote.', requestToken);
@@ -126,19 +125,17 @@ function getDailyQuote(requestToken) {
                     var rating = JSON.parse(buffer);
                     resolve(rating);
                 } else {
-                    utils.log('Rejecting request for daily quote. Response Code: ' + quoteRes.statusCode, requestToken);
                     reject(quoteRes.statusCode);
                 }
             });
-
-
         })
-            .on('error', error => {
-                utils.log('Rejecting request for daily quote. Error: ' + error, requestToken);
-                reject(error);
-            })
-            .end();
-
+        .on('error', error => {
+            reject(error);
+        })
+        .end();
+    })
+    .catch((error) => {
+        utils.log(`Rejecting get daily quote. Error: ${error}`, requestToken);
     });
 }
 
@@ -168,17 +165,19 @@ function getRandomQuote(requestToken) {
                     var rating = JSON.parse(buffer);
                     resolve(rating);
                 } else {
-                    utils.log('Rejecting request for random quote. Response Code: quoteRes.statusCode', requestToken);
                     reject(quoteRes.statusCode);
                 }
             });
 
         })
-            .on('error', error => {
-                utils.log('Rejecting request for random quote. Error: ' + error, requestToken);
-                reject(error);
-            }).end();
+        .on('error', error => {
+            reject(error);
+        })
+        .end();
 
+    })
+    .catch((error) => {
+        utils.log(`Rejecting get random quote. Error: ${error}`, requestToken);
     });
 }
 
@@ -196,6 +195,7 @@ app.get('/', function (req, res) {
         getDailyQuote(requestToken)
             .then((quote) => {
                 var now = new moment();
+                
                 quote.today = now.format("dddd, MMMM Do YYYY");
                 quote.title = "Quote of the Day";
                 addRating(quote, requestToken)
