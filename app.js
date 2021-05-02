@@ -442,8 +442,6 @@ app.get('/pdf/:id',
 //----------------------------------------------------------------------------------------------
 // Logging
 
-const logger = require('./logger.js');
-
 app.post('/logger',
     function (req, res) {
         var logTemplate = req.body;
