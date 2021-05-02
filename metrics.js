@@ -169,3 +169,10 @@ app.put('/metric/cpu', function(req,res) {
 app.get('/metric/cpu', function(req,res) {
     res.json(cpuOptions);
 });
+
+function resetToFactorySettings(){
+    apiResOptions = JSON.parse(JSON.stringify(factorySettings.api));
+    memOptions = JSON.parse(JSON.stringify(factorySettings.mem));
+    cpuOptions = JSON.parse(JSON.stringify(factorySettings.cpu));
+}
+exports.resetToFactorySettings = resetToFactorySettings;

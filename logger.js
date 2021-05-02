@@ -116,3 +116,11 @@ function genLog(logger) {
 }
 exports.genLog = genLog;
 
+function resetToFactorySettings(){
+    for(var i=0; i<activeLoggers.length; i++){
+        var logger = activeLoggers[i];
+        removeLogger(logger.id);
+    }
+}
+exports.resetToFactorySettings = resetToFactorySettings;
+

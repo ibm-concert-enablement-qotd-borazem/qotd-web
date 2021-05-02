@@ -477,6 +477,12 @@ app.get('/version',
     }
 );
 
+app.post('/reset', function(req,res){
+    metrics.resetToFactorySettings();
+    getLogger.resetToFactorySettings();
+    res.send("OK");
+});
+
 const package = require('./package.json');
 const appName = package.name;
 const appVersion = package.version;
