@@ -65,6 +65,7 @@ app.delete('/metric/apiRes', function (req, res) {
 var apiRampInterval;
 
 function updateApiOptions(slope, target) {
+    utils.logLocal("ramping api: " + apiResOptions.mean + " -> " + target  + ". Slope: " + slope);
     apiResOptions.mean += slope;
     if( apiResOptions.mean >= target ) {
         apiResOptions.mean = target;
@@ -87,7 +88,7 @@ app.put('/metric/apiRes', function (req, res) {
         // incrementaly change the mean (up or down) over the 
         var currentMean = apiResOptions.mean;
         var targetMean = req.body.mean;
-        var overPeriodOfTime = ramp;
+        var overPeriodOfTime = ramp/1000; //convert to seconds
         var slope = (targetMean - currentMean) / overPeriodOfTime;
         var period = 1000; // change every 1s - roughtly corresponds to polling period
         req.body.mean = currentMean;
@@ -137,6 +138,7 @@ app.delete('/metric/mem', function (req, res) {
 var memRampInterval;
 
 function updateMemOptions(slope, target) {
+    utils.logLocal("ramping mem: " + memOptions.mean + " -> " + target  + ". Slope: " + slope);
     memOptions.mean += slope;
     if( memOptions.mean >= target ) {
         memOptions.mean = target;
@@ -159,7 +161,7 @@ app.put('/metric/mem', function (req, res) {
         // incrementaly change the mean (up or down) over the 
         var currentMean = memOptions.mean;
         var targetMean = req.body.mean;
-        var overPeriodOfTime = ramp;
+        var overPeriodOfTime = ramp/1000; //convert to seconds
         var slope = (targetMean - currentMean) / overPeriodOfTime;
         var period = 1000; // change every 1s - roughtly corresponds to polling period
         req.body.mean = currentMean;
@@ -217,6 +219,7 @@ app.delete('/metric/cpu', function (req, res) {
 var cpuRampInterval;
 
 function updateCpuOptions(slope, target) {
+    utils.logLocal("ramping cpu: " + cpuOptions.mean + " -> " + target  + ". Slope: " + slope);
     cpuOptions.mean += slope;
     if( cpuOptions.mean >= target ) {
         cpuOptions.mean = target;
@@ -239,7 +242,7 @@ app.put('/metric/cpu', function (req, res) {
         // incrementaly change the mean (up or down) over the 
         var currentMean = cpuOptions.mean;
         var targetMean = req.body.mean;
-        var overPeriodOfTime = ramp;
+        var overPeriodOfTime = ramp/1000; //convert to seconds
         var slope = (targetMean - currentMean) / overPeriodOfTime;
         var period = 1000; // change every 1s - roughtly corresponds to polling period
         req.body.mean = currentMean;
