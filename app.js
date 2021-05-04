@@ -3,6 +3,7 @@ const fs = require('fs');
 const http = require('http');
 const moment = require('moment');
 const promMid = require('express-prometheus-middleware');
+const parseUrl = require("parse-url");
 
 if (process.env.ENABLE_INSTANA == "true") {
     require('@instana/collector')();
@@ -13,17 +14,10 @@ if (typeof process.env.USE_REQ_TOKEN != 'undefined') {
     USE_REQ_TOKEN = (process.env.USE_REQ_TOKEN == 'true' || process.env.USE_REQ_TOKEN == 'True');
 }
 
-QUOTE_SVC_HOST = process.env.QUOTE_SVC_HOST;
-QUOTE_SVC_PORT = process.env.QUOTE_SVC_PORT;
-
-AUTHOR_SVC_HOST = process.env.AUTHOR_SVC_HOST;
-AUTHOR_SVC_PORT = parseInt(process.env.AUTHOR_SVC_PORT);
-
-RATING_SVC_HOST = process.env.RATING_SVC_HOST;
-RATING_SVC_PORT = parseInt(process.env.RATING_SVC_PORT);
-
-PDF_SVC_HOST = process.env.PDF_SVC_HOST;
-PDF_SVC_PORT = parseInt(process.env.PDF_SVC_PORT);
+QUOTE_SVC = process.env.QUOTE_SVC;
+AUTHOR_SVC = process.env.AUTHOR_SVC;
+RATING_SVC = process.env.RATING_SVC;
+PDF_SVC = process.env.PDF_SVC;
 
 app = express();
 app.set('views', __dirname + '/views');
@@ -62,11 +56,15 @@ function updateApiResponseMetric(start) {
 function addRating(quote, requestToken) {
     return new Promise((resolve, reject) => {
         utils.log('Getting rating for quote: ' + quote.id, requestToken);
+        var parsedUrl = parseUrl(RATING_SVC);
+        var hostname = parsedUrl.resource;
+        var port = 80;
+        if (parsedUrl.port != null) port = parsedUrl.port;    
         const options = {
             "headers": { "Accept": "application/json" },
             "method": 'GET',
-            "hostname": RATING_SVC_HOST,
-            "port": RATING_SVC_PORT,
+            "hostname": hostname,
+            "port": port,
             "path": '/ratings/' + quote.id + '?requestToken=' + requestToken
         }
 
@@ -103,12 +101,15 @@ function getDailyQuote(requestToken) {
     return new Promise((resolve, reject) => {
 
         utils.log('Getting daily quote.', requestToken);
-
+        var parsedUrl = parseUrl(QUOTE_SVC);
+        var hostname = parsedUrl.resource;
+        var port = 80;
+        if (parsedUrl.port != null) port = parsedUrl.port;  
         const options = {
             "headers": { "Accept": "application/json" },
             "method": 'GET',
-            "hostname": QUOTE_SVC_HOST,
-            "port": QUOTE_SVC_PORT,
+            "hostname": hostname,
+            "port": port,
             "path": '/daily?requestToken=' + requestToken
         }
 
@@ -142,13 +143,16 @@ function getDailyQuote(requestToken) {
 
 function getRandomQuote(requestToken) {
     return new Promise((resolve, reject) => {
-
         utils.log('Getting random quote.', requestToken);
+        var parsedUrl = parseUrl(QUOTE_SVC);
+        var hostname = parsedUrl.resource;
+        var port = 80;
+        if (parsedUrl.port != null) port = parsedUrl.port;  
         const options = {
             "headers": { "Accept": "application/json" },
             "method": 'GET',
-            "hostname": QUOTE_SVC_HOST,
-            "port": QUOTE_SVC_PORT,
+            "hostname": hostname,
+            "port": port,
             "path": '/random?requestToken=' + requestToken
         }
 
@@ -269,12 +273,16 @@ app.get('/author/:id', function (req, res) {
     utils.logLocal('[' + start + '] Author bio quote page being delayed: ' + delay + 'ms');
     utils.log('Author bio request: /author/' + id + ' .', requestToken);
 
+    var parsedUrl = parseUrl(AUTHOR_SVC);
+    var hostname = parsedUrl.resource;
+    var port = 80;
+    if (parsedUrl.port != null) port = parsedUrl.port;  
     setTimeout(function () {
         const options = {
             "headers": { "Accept": "application/json" },
             "method": 'GET',
-            "hostname": AUTHOR_SVC_HOST,
-            "port": AUTHOR_SVC_PORT,
+            "hostname": hostname,
+            "port": port,
             "path": '/authors/' + id + '?requestToken=' + requestToken
         }
 
@@ -327,12 +335,16 @@ app.get('/images/:id',
         utils.log("Author image request id: " + id, requestToken);
         utils.logLocal('[' + start + '] Service being delayed: ' + delay + 'ms');
 
+        var parsedUrl = parseUrl(AUTHOR_SVC);
+        var hostname = parsedUrl.resource;
+        var port = 80;
+        if (parsedUrl.port != null) port = parsedUrl.port;  
         setTimeout(function () {
             const options = {
                 "headers": { "Accept": "image/jpeg" },
                 "method": 'GET',
-                "hostname": AUTHOR_SVC_HOST,
-                "port": AUTHOR_SVC_PORT,
+                "hostname": hostname,
+                "port": port,
                 "path": '/images/' + id + '?requestToken=' + requestToken
             }
 
@@ -390,12 +402,16 @@ app.get('/pdf/:id',
         utils.log("PDF request for quote id: " + id, requestToken);
         utils.logLocal('[' + start + '] Service being delayed: ' + delay + 'ms');
 
+        var parsedUrl = parseUrl(PDF_SVC);
+        var hostname = parsedUrl.resource;
+        var port = 80;
+        if (parsedUrl.port != null) port = parsedUrl.port;  
         setTimeout(function () {
             const options = {
                 "headers": { "Accept": "application/pdf" },
                 "method": 'GET',
-                "hostname": PDF_SVC_HOST,
-                "port": PDF_SVC_PORT,
+                "hostname": hostname,
+                "port": port,
                 "path": '/pdf/' + id + '?requestToken=' + requestToken
             }
 

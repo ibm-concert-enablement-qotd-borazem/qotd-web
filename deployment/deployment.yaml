@@ -39,22 +39,14 @@ spec:
               value: "false"
             - name: ENABLE_INSTANA
               value: "false"
-            - name: QUOTE_SVC_HOST
-              value: "qotd-quote.qotd.svc.cluster.local"
-            - name: QUOTE_SVC_PORT
-              value: "3001"
-            - name: AUTHOR_SVC_HOST
-              value: "qotd-author.qotd.svc.cluster.local"
-            - name: AUTHOR_SVC_PORT
-              value: "3002"
-            - name: RATING_SVC_HOST
-              value: "qotd-rating.qotd.svc.cluster.local"
-            - name: RATING_SVC_PORT
-              value: "3004"
+            - name: QUOTE_SVC
+              value: "qotd-quote.qotd.svc.cluster.local:3001"
+            - name: AUTHOR_SVC
+              value: "qotd-author.qotd.svc.cluster.local:3002"
+            - name: RATING_SVC
+              value: "qotd-rating.qotd.svc.cluster.local:3004"
             - name: PDF_SVC_HOST
-              value: "qotd-pdf.qotd.svc.cluster.local"
-            - name: PDF_SVC_PORT
-              value: "3005"
+              value: "qotd-pdf.qotd.svc.cluster.local:3005"
 ---
 kind: ConfigMap
 apiVersion: v1
