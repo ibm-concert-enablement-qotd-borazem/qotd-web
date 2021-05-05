@@ -45,7 +45,7 @@ spec:
               value: "qotd-author.qotd.svc.cluster.local:3002"
             - name: RATING_SVC
               value: "qotd-rating.qotd.svc.cluster.local:3004"
-            - name: PDF_SVC_HOST
+            - name: PDF_SVC
               value: "qotd-pdf.qotd.svc.cluster.local:3005"
 ---
 kind: ConfigMap
