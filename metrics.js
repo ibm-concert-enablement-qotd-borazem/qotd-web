@@ -126,6 +126,13 @@ app.put('/metric/mem', function (req, res) {
     }
 });
 
+app.delete('/metric/mem', function (req, res) {
+    utils.logLocal("DELETE /metric/mem ");
+    memOptions = JSON.parse(JSON.stringify(factorySettings.mem));
+    updateMemory();
+    res.status(200).send("OK");
+});
+
 app.get('/metric/mem', function (req, res) {
     res.json(memOptions);
 });
@@ -191,6 +198,13 @@ app.put('/metric/cpu', function (req, res) {
         utils.logLocal("Invalid number of hogs: " + req.body.hogs);
         res.status(400).end("Invalid number of hogs: " + req.body.hogs);
     }
+});
+
+app.delete('/metric/cpu', function (req, res) {
+    utils.logLocal("DELETE /metric/cpu ");
+    memOptions = JSON.parse(JSON.stringify(factorySettings.cpu));
+    updateMemory();
+    res.status(200).send("OK");
 });
 
 app.get('/metric/cpu', function (req, res) {
