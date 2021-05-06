@@ -202,8 +202,8 @@ app.put('/metric/cpu', function (req, res) {
 
 app.delete('/metric/cpu', function (req, res) {
     utils.logLocal("DELETE /metric/cpu ");
-    memOptions = JSON.parse(JSON.stringify(factorySettings.cpu));
-    updateMemory();
+    cpuOptions = JSON.parse(JSON.stringify(factorySettings.cpu));
+    updateCpuHogs();
     res.status(200).send("OK");
 });
 
