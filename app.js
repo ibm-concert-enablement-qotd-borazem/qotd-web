@@ -114,9 +114,9 @@ function addRating(quote, requestToken) {
         })
         .end();
     })
-    .catch((error) => {
-        utils.log(`Rejecting addRating. ${error}`, requestToken);
-    });
+    // .catch((error) => {
+    //     utils.log(`Rejecting addRating. ${error}`, requestToken);
+    // });
 }
 
 function getDailyQuote(requestToken) {
@@ -226,17 +226,17 @@ app.get('/', function (req, res) {
                 quote.today = now.format("dddd, MMMM Do YYYY");
                 quote.title = "Quote of the Day";
                 addRating(quote, requestToken)
-                    .then((quote) => {
+                .then((quote) => {
+                    res.render('home', quote);
+                })
+                .catch(
+                    (err) => {
+                        utils.log(" Problem getting rating. Err: " + err, requestToken);
+                        // send th epage anyway but with a -1 rating
+                        quote.rating = -1;
                         res.render('home', quote);
-                    })
-                    .catch(
-                        (err) => {
-                            utils.log(" Problem getting rating. Err: " + err, requestToken);
-                            // send th epage anyway but with a -1 rating
-                            quote.rating = -1;
-                            res.render('home', quote);
-                        }
-                    );
+                    }
+                );
             })
             .catch(
                 (err) => {
