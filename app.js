@@ -30,6 +30,36 @@ app.use(express.static(__dirname + '/public'));
 app.use(express.json());
 app.use(promMid());
 
+
+//----------------------------------------------------------------------------------------------
+// Health
+
+var liveness = {
+    "healthy": true
+}
+
+app.get('/health', function(req,res){
+	if( liveness.healthy ) {
+		res.status(200).send("Felling good, thank you.");
+	} else {
+		res.status(500).send("Not feeling too good, I am afraid.")
+	}
+});
+
+app.put('/liveness', function(req,res){
+    var nHealth = req.body;
+	healthy = nHealth;
+    utils.logLocal("Health updated to " + healthy );
+    res.json(health);
+});
+
+app.delete('/liveness', function(req,res){
+	health.healthy = true;
+    utils.logLocal("Reset health to " + healthy );
+    res.json(health);
+});
+
+
 //----------------------------------------------------------------------------------------------
 // Main app
 
@@ -83,17 +113,19 @@ function addRating(quote, requestToken) {
                     quote.rating = rating.rating;
                     resolve(quote);
                 } else {
+                    utils.log('Rejecting rating for quote.  Status: ' + ratingRes.statusCode, requestToken);
                     reject(ratingRes.statusCode);
                 }
             });
         })
         .on('error', error => {
+            utils.log('Rejecting rating for quote. ' + error, requestToken);
             reject(error);
         })
         .end();
     })
     .catch((error) => {
-        utils.log(`Rejecting addRating. Error: ${error}`, requestToken);
+        utils.log(`Rejecting addRating. ${error}`, requestToken);
     });
 }
 
@@ -124,8 +156,8 @@ function getDailyQuote(requestToken) {
                 if (quoteRes.statusCode == 200) {
                     utils.log('Obtained daily quote.', requestToken);
                     var buffer = Buffer.concat(rawData).toString();
-                    var rating = JSON.parse(buffer);
-                    resolve(rating);
+                    var quote = JSON.parse(buffer);
+                    resolve(quote);
                 } else {
                     reject(quoteRes.statusCode);
                 }
@@ -210,7 +242,7 @@ app.get('/', function (req, res) {
                     })
                     .catch(
                         (err) => {
-                            utils.log("Internal Error.  Problem getting rating. Err: " + err, requestToken);
+                            utils.log(" Problem getting rating. Err: " + err, requestToken);
                             // send th epage anyway but with a -1 rating
                             quote.rating = -1;
                             res.render('home', quote);
@@ -243,13 +275,22 @@ app.get('/random', function (req, res) {
 
         getRandomQuote(requestToken)
             .then((quote) => {
+                quote.today = "";
+                quote.title = "Random Quote";
                 addRating(quote, requestToken)
                     .then((quote) => {
-                        quote.today = "";
-                        quote.title = "Random Quote";
                         res.render('home', quote);
                         updateApiResponseMetric(start);
-                    });
+                    })
+                    .catch(
+                        (err) => {
+                            utils.log(" Problem getting rating. Err: " + err, requestToken);
+                            // send th epage anyway but with a -1 rating
+                            quote.rating = -1;
+                            res.render('home', quote);
+                            updateApiResponseMetric(start);
+                        }
+                    );
             })
             .catch(
                 (err) => {
@@ -314,12 +355,12 @@ app.get('/author/:id', function (req, res) {
                 }
             });
         })
-            .on('error', error => {
-                res.status(500).send("Problem getting author bio.");
-                utils.log("Problem getting author bio.  " + error, requestToken);
-                updateApiResponseMetric(start);
-            })
-            .end();
+        .on('error', error => {
+            res.status(500).send("Problem getting author bio.");
+            utils.log("Problem getting author bio.  " + error, requestToken);
+            updateApiResponseMetric(start);
+        })
+        .end();
 
     }, delay);
 });

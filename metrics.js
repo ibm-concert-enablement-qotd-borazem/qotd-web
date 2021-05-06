@@ -1,43 +1,10 @@
 const utils = require('./utils.js');
-/*
-
-The metrics this app generates are:
-
-qotd_web_api_response_duration_seconds:   the response time in seconds of an API call for application service.  Normally
-                                        this value is between 0.01 and 2.0 seconds.  A value of greater than 2 seconds typically will 
-                                        cause an alert.
-
-qotd_web_request_duration_seconds_count:  the number of calls that have contributed to the above metric.
-
-qotd_web_memory_usage_bytes:              the number of bytes memory currently being used.  This value is completely faked
-
-qotd_web_memory_limit_bytes:              total amount of memory this service has.
-
-qotd_web_cpu_time_ns:                     the total cpu nano-seconds consumed. This value is completely faked.
-
-
-*/
 
 const factorySettings = require('./data/factory_settings.json');
 
 
-// =====================================================================================
-const client = require('prom-client');
-
 // --------------------------------------------------
-// qotd_web_request_duration_seconds_sum and qotd_web_request_duration_seconds_count
-// are not generated from scratch.  Each update is due to an actual api request, 
-// however the actual response time in seconds might be randmonly padded out.
-
-const resDurationSecondsMetric = new client.Counter({
-    name: 'qotd_web_request_duration_seconds_sum',
-    help: 'Response time in seconds of an API call that this application provides'
-});
-
-const resDurationCountMetric = new client.Counter({
-    name: 'qotd_web_request_duration_seconds_count',
-    help: 'Number of API calls that contribute to this metric'
-});
+// Response time
 
 var apiResOptions = JSON.parse(JSON.stringify(factorySettings.api));
 
@@ -49,12 +16,6 @@ function getDelay() {
     return utils.genNormalInt(mean, stdev, min, max);
 }
 exports.getDelay = getDelay;
-
-function recordApiResponse(time) {
-    resDurationCountMetric.inc();
-    resDurationSecondsMetric.inc(time);
-}
-exports.recordApiResponse = recordApiResponse;
 
 app.delete('/metric/apiRes', function (req, res) {
     apiResOptions = JSON.parse(JSON.stringify(factorySettings.api));
@@ -104,71 +65,65 @@ app.get('/metric/apiRes', function (req, res) {
 
 
 // --------------------------------------------------
-// qotd_web_memory_usage_bytes and qotd_web_memory_usage_bytes
-
-const memUsageMetric = new client.Gauge({
-    name: 'qotd_web_memory_usage_bytes',
-    help: 'Current amount of memory in use (simulated)'
-});
-
-const memLimitMetric = new client.Gauge({
-    name: 'qotd_web_memory_limit_bytes',
-    help: 'Memory limit'
-});
+// Memory
 
 var memOptions = JSON.parse(JSON.stringify(factorySettings.mem));
 
-function genMemUsage() {
-    var mean = memOptions.mean;
-    var stdev = memOptions.stdev;
-    var min = memOptions.min;
-    var max = memOptions.max;
-    var mem = utils.genNormalInt(mean, stdev, min, max);
-    memUsageMetric.set(mem);
-    memLimitMetric.set(max);
-}
-setInterval(genMemUsage, 1000); // update every second
+var memoryAllocations = [];
 
-app.delete('/metric/mem', function (req, res) {
-    memOptions = JSON.parse(JSON.stringify(factorySettings.mem));
-    utils.logLocal("DELETE /metric/mem ");
-    res.status(200).send("OK");
-});
-
-var memRampInterval;
-
-function updateMemOptions(slope, target) {
-    utils.logLocal("ramping mem: " + memOptions.mean + " -> " + target  + ". Slope: " + slope);
-    memOptions.mean += slope;
-    if( memOptions.mean >= target ) {
-        memOptions.mean = target;
-        clearInterval(memRampInterval);
-        memRampInterval = null;
+function updateMemory(){
+    var currentHogs = memoryAllocations.length;
+    var desiredHogs = memOptions.hogs;
+    var diff = desiredHogs - currentHogs;
+    if( diff >= 0  ) {
+        // then add more
+        utils.logLocal( "Adding mem hogs: "+ diff);
+        allocMemHog( diff );
+    } else {
+        diff = -diff;
+        utils.logLocal( "Removing mem hogs: "+ diff);
+        if( diff >= memoryAllocations.length ) diff = memoryAllocations.length;
+        for(var i=0; i<diff; i++ ){
+            memoryAllocations.pop();
+            utils.logLocal("hot dog hog ["+ memoryAllocations.length + "]");
+        }
+        utils.logLocal( "Forcing garbage collection: "+ diff);
+        global.gc();
     }
 }
+
+function allocMemHog(hogs) {
+    return new Promise( (resolve,reject) => {
+        try{
+            
+            for (let i = 0; i < hogs; i++) {
+                const numbers = hogs * 10000 * 1024 / 8; // 1 hog ~= 10MB
+                const arr = []
+                arr.length = numbers; // Simulate allocation of 'size' bytes.
+                for (let i = 0; i < numbers; i++) {
+                    arr[i] = i;
+                }
+                memoryAllocations.push(arr);
+                utils.logLocal("new hog ["+ memoryAllocations.length + "]");
+            }
+            resolve(hogs);
+        }
+        catch( error ) {
+            reject( error );
+        }
+    });
+};
 
 app.put('/metric/mem', function (req, res) {
-    // todo: validation
     utils.logLocal("PUT /metric/mem " + JSON.stringify(req.body));
-    var ramp = req.query.ramp;
-    if( typeof ramp == 'undefined' ) {
-        if( memRampInterval ) {
-            clearInterval(memRampInterval);
-            memRampInterval = null;
-        }
+    if( req.body.hogs != 'undefined' && req.body.hogs >= 0 ){
         memOptions = req.body;
+        updateMemory();
+        res.status(200).json(memOptions);
     } else {
-        // incrementaly change the mean (up or down) over the 
-        var currentMean = memOptions.mean;
-        var targetMean = req.body.mean;
-        var overPeriodOfTime = ramp/1000; //convert to seconds
-        var slope = (targetMean - currentMean) / overPeriodOfTime;
-        var period = 1000; // change every 1s - roughtly corresponds to polling period
-        req.body.mean = currentMean;
-        memOptions = req.body;
-        memRampInterval = setInterval(updateMemOptions, period, slope, targetMean);
+        utils.logLocal("Invalid number of hogs: " + req.body.hogs);
+        res.status(400).end("Invalid number of hogs: " + req.body.hogs);
     }
-    res.status(200).end("OK");
 });
 
 app.get('/metric/mem', function (req, res) {
@@ -177,84 +132,72 @@ app.get('/metric/mem', function (req, res) {
 
 
 // --------------------------------------------------
-// qotd_web_cpu_time
-
-const cpuTotalMetric = new client.Counter({
-    name: 'qotd_web_cpu_seconds_total',
-    help: 'Current sum of cpu seconds (simulated)'
-});
-
-const cpuUserMetric = new client.Counter({
-    name: 'qotd_web_cpu_user_seconds_total',
-    help: 'Current sum of cpu seconds (simulated)'
-});
-
-const cpuIdleMetric = new client.Counter({
-    name: 'qotd_web_cpu_idle_seconds_total',
-    help: 'Current sum of idle cpu seconds (simulated)'
-});
+//  CPU
 
 var cpuOptions = JSON.parse(JSON.stringify(factorySettings.cpu));
 
-function genCpuUsage() {
-    // generate a delay in ms, based on current constraints
-    var mean = cpuOptions.mean;
-    var stdev = cpuOptions.stdev;
-    var min = cpuOptions.min;
-    var max = cpuOptions.max;
-    var cpu = utils.genNormal(mean, stdev, min, max);
-    cpuUserMetric.inc(cpu);
-    cpuIdleMetric.inc(1 - cpu);
-    cpuTotalMetric.inc(1); // the total is user + idle (since these are only two we have just do this simple calculation)
+var CPU_HOG_SIZE = 10000;
+if( typeof process.env.CPU_HOG_SIZE != 'undefined' ) {
+    CPU_HOG_SIZE = parseInt(process.env.CPU_HOG_SIZE);
+    if(CPU_HOG_SIZE<1000) CPU_HOG_SIZE = 10000;
 }
-setInterval(genCpuUsage, 1000); // update every second - this correlates with cpu options limit and total metric calculation above
+var cpuHogs = [];
 
-
-app.delete('/metric/cpu', function (req, res) {
-    utils.logLocal("DELETE /metric/cpu ");
-    cpuOptions = JSON.parse(JSON.stringify(factorySettings.cpu));
-    res.status(200).send("OK");
-});
-
-var cpuRampInterval;
-
-function updateCpuOptions(slope, target) {
-    utils.logLocal("ramping cpu: " + cpuOptions.mean + " -> " + target  + ". Slope: " + slope);
-    cpuOptions.mean += slope;
-    if( cpuOptions.mean >= target ) {
-        cpuOptions.mean = target;
-        clearInterval(cpuRampInterval);
-        cpuRampInterval = null;
+function cpuHogBurst(){
+    var countTo = CPU_HOG_SIZE;
+    var result;
+    for( var i=0; i<countTo; i++){
+        result = Math.random() * Math.random();
     }
+    utils.logLocal("oink");
+}
+
+function addCpuHogs(hogs) {
+    for( var i=0; i<hogs; i++ ) {
+        var cpuInterval = setInterval(cpuHogBurst,1000);
+        cpuHogs.push(cpuInterval);    
+    }
+};
+
+function removeCpuHogs(hogs) {
+    for( var i=0; i<hogs; i++ ) {
+        var hog = cpuHogs.pop();
+        clearInterval(hog);
+        delete hog;
+    }
+};
+
+function updateCpuHogs(){
+    var currentCpuHogCount = cpuHogs.length;
+    var desiredCpuHogCount = cpuOptions.hogs;
+    var diff = desiredCpuHogCount - currentCpuHogCount;
+    if( diff >= 0 ) {
+        utils.logLocal("Adding cpu hogs: " + diff );
+        addCpuHogs(diff);
+    } else {
+        utils.logLocal("Adding cpu hogs: " + diff );
+        removeCpuHogs(-diff);
+    }
+    utils.logLocal("Current cpu hogs: " + cpuHogs.length );
 }
 
 app.put('/metric/cpu', function (req, res) {
-    // todo: validation
-    utils.logLocal("PUT /metric/cpu " + JSON.stringify(req.body));
-    var ramp = req.query.ramp;
-    if( typeof ramp == 'undefined' ) {
-        if( cpuRampInterval ) {
-            clearInterval(cpuRampInterval);
-            cpuRampInterval = null;
-        }
+    utils.logLocal("PUT /metric/mem " + JSON.stringify(req.body));
+    if( req.body.hogs != 'undefined' && req.body.hogs >= 0 ){
         cpuOptions = req.body;
+        updateCpuHogs();
+        res.status(200).json(cpuOptions);
     } else {
-        // incrementaly change the mean (up or down) over the 
-        var currentMean = cpuOptions.mean;
-        var targetMean = req.body.mean;
-        var overPeriodOfTime = ramp/1000; //convert to seconds
-        var slope = (targetMean - currentMean) / overPeriodOfTime;
-        var period = 1000; // change every 1s - roughtly corresponds to polling period
-        req.body.mean = currentMean;
-        cpuOptions = req.body;
-        cpuRampInterval = setInterval(updateCpuOptions, period, slope, targetMean);
+        utils.logLocal("Invalid number of hogs: " + req.body.hogs);
+        res.status(400).end("Invalid number of hogs: " + req.body.hogs);
     }
-    res.status(200).end("OK");
 });
 
 app.get('/metric/cpu', function (req, res) {
     res.json(cpuOptions);
 });
+
+
 
 function resetToFactorySettings(){
     apiResOptions = JSON.parse(JSON.stringify(factorySettings.api));
@@ -263,3 +206,13 @@ function resetToFactorySettings(){
 }
 exports.resetToFactorySettings = resetToFactorySettings;
 
+// DEBUG
+
+// var prevCpu = process.cpuUsage().user;
+// function printCpu(){
+//     var curCpu =  process.cpuUsage().user;
+//     console.log( curCpu - prevCpu );
+//     prevCpu = curCpu;
+// }
+
+// setInterval( () => { printCpu(); }, 2000 );

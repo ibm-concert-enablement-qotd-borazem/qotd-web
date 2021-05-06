@@ -47,6 +47,19 @@ spec:
               value: "qotd-rating.qotd.svc.cluster.local:3004"
             - name: PDF_SVC
               value: "qotd-pdf.qotd.svc.cluster.local:3005"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3004
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "80Mi"
+            limits:
+              cpu: "500m"
+              memory: "500Mi"
 ---
 kind: ConfigMap
 apiVersion: v1
