@@ -2,7 +2,6 @@ const express = require('express');
 const fs = require('fs');
 const http = require('http');
 const moment = require('moment');
-const promMid = require('express-prometheus-middleware');
 const parseUrl = require("parse-url");
 
 if (process.env.ENABLE_INSTANA == "true") {
@@ -28,8 +27,6 @@ app.enable('trust proxy');
 
 app.use(express.static(__dirname + '/public'));
 app.use(express.json());
-app.use(promMid());
-
 
 //----------------------------------------------------------------------------------------------
 // Health

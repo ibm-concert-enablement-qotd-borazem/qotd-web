@@ -1,7 +1,6 @@
 const faker = require('faker');
 const moment = require('moment');
 const utils = require('./utils.js');
-const fs = require('fs');
 
 function genValue(field) {
     var type = field.type;
