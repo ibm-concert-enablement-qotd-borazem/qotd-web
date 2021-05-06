@@ -73,13 +73,6 @@ function newReqToken() {
     }
 }
 
-function updateApiResponseMetric(start) {
-    var stop = new Date().getTime();
-    var resTime = (stop - start) / 1000;  // convert to seconds
-    metrics.recordApiResponse(resTime);
-    utils.logLocal('[' + stop + '-' + start + '] Api res time: ' + resTime);
-}
-
 function addRating(quote, requestToken) {
     return new Promise((resolve, reject) => {
         utils.log('Getting rating for quote: ' + quote.id, requestToken);
@@ -235,7 +228,6 @@ app.get('/', function (req, res) {
                 addRating(quote, requestToken)
                     .then((quote) => {
                         res.render('home', quote);
-                        updateApiResponseMetric(start);
                     })
                     .catch(
                         (err) => {
@@ -243,7 +235,6 @@ app.get('/', function (req, res) {
                             // send th epage anyway but with a -1 rating
                             quote.rating = -1;
                             res.render('home', quote);
-                            updateApiResponseMetric(start);
                         }
                     );
             })
@@ -251,7 +242,6 @@ app.get('/', function (req, res) {
                 (err) => {
                     utils.log("Internal Error.  Problem getting daily quote. Err: " + err, requestToken);
                     res.status(500).send("Problem getting daily quote.");
-                    updateApiResponseMetric(start);
                 }
             );
 
@@ -277,7 +267,6 @@ app.get('/random', function (req, res) {
                 addRating(quote, requestToken)
                     .then((quote) => {
                         res.render('home', quote);
-                        updateApiResponseMetric(start);
                     })
                     .catch(
                         (err) => {
@@ -285,7 +274,6 @@ app.get('/random', function (req, res) {
                             // send th epage anyway but with a -1 rating
                             quote.rating = -1;
                             res.render('home', quote);
-                            updateApiResponseMetric(start);
                         }
                     );
             })
@@ -293,7 +281,6 @@ app.get('/random', function (req, res) {
                 (err) => {
                     utils.log("Internal Error.  Problem getting random quote. Err: " + err, requestToken);
                     res.status(500).send("Problem getting random quote.");
-                    updateApiResponseMetric(start);
                 }
             );
 
@@ -337,7 +324,6 @@ app.get('/author/:id', function (req, res) {
                     var buffer = Buffer.concat(rawData).toString();
                     var bio = JSON.parse(buffer);
                     res.render('author', bio);
-                    updateApiResponseMetric(start);
                 } else {
                     var quote = {
                         "title": "QotD Error",
@@ -348,14 +334,12 @@ app.get('/author/:id', function (req, res) {
                     };
                     utils.log("Problem getting author bio. Service Status Code: " + bioReq.statusCode, requestToken);
                     res.status(500).send("Problem getting author bio.");
-                    updateApiResponseMetric(start);
                 }
             });
         })
         .on('error', error => {
             res.status(500).send("Problem getting author bio.");
             utils.log("Problem getting author bio.  " + error, requestToken);
-            updateApiResponseMetric(start);
         })
         .end();
 
@@ -403,7 +387,6 @@ app.get('/images/:id',
                             'Content-Length': buffer.length
                         });
                         res.end(Buffer.from(buffer, 'binary'));
-                        updateApiResponseMetric(start);
                         utils.log("Author image provided.", requestToken);
                     } else {
                         // assume any error will report a 404
@@ -415,14 +398,12 @@ app.get('/images/:id',
                             'Content-Length': defImage.length
                         });
                         res.end(Buffer.from(defImage, 'binary'));
-                        updateApiResponseMetric(start);
                     }
                 });
             })
                 .on('error', error => {
                     utils.log("Problem getting image " + id + " Error: " + error, requestToken);
                     res.status(500).send("Image " + id + " not found");
-                    updateApiResponseMetric(start);
                 })
                 .end();
 
@@ -472,19 +453,16 @@ app.get('/pdf/:id',
                         });
                         res.end(Buffer.from(buffer, 'binary'));
                         utils.log("PDF image sent.", requestToken);
-                        updateApiResponseMetric(start);
                     } else {
                         // assume any error will report a 404
                         utils.log("PDF " + id + " not found.", requestToken);
                         res.status(404).send("PDF " + id + " not found");
-                        updateApiResponseMetric(start);
                     }
                 });
             })
                 .on('error', error => {
                     utils.log("Attempt to get PDF " + id + " unsuccessful. Error: " + error, requestToken);
                     res.status(500).send("PDF " + id + " Error: " + error);
-                    updateApiResponseMetric(start);
                 })
                 .end();
 
