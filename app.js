@@ -418,7 +418,9 @@ app.get('/pdf/:id',
         var requestToken = newReqToken();
         var delay = metrics.getDelay();
         var id = req.params.id;
-        utils.log("PDF request for quote id: " + id, requestToken);
+        var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+        utils.log('Starting new request token: ' + requestToken + ' for IP: ' + ip);
+        utils.log("PDF request id: " + id, requestToken);
         utils.logLocal('[' + start + '] Service being delayed: ' + delay + 'ms');
 
         var parsedUrl = parseUrl(PDF_SVC);
