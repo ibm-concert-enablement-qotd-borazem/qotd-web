@@ -78,41 +78,37 @@ function updateMemory(){
     if( diff >= 0  ) {
         // then add more
         utils.logLocal( "Adding mem hogs: "+ diff);
-        allocMemHog( diff );
+        for(var i=0; i<diff; i++ ){
+            setTimeout( () => {
+                allocMemoryBlock();
+            }, i*2000);
+        }
     } else {
         diff = -diff;
         utils.logLocal( "Removing mem hogs: "+ diff);
         if( diff >= memoryAllocations.length ) diff = memoryAllocations.length;
         for(var i=0; i<diff; i++ ){
-            memoryAllocations.pop();
-            utils.logLocal("hot dog hog ["+ memoryAllocations.length + "]");
+            setTimeout( () => {
+                memoryAllocations.pop();
+                utils.logLocal("hot dog hog ["+ memoryAllocations.length + "], taking out garbage");    
+                global.gc();
+            }, i*2000);
         }
-        utils.logLocal( "Forcing garbage collection: "+ diff);
-        global.gc();
     }
 }
 
-function allocMemHog(hogs) {
-    return new Promise( (resolve,reject) => {
-        try{
-            
-            for (let i = 0; i < hogs; i++) {
-                const numbers = hogs * 10000 * 1024 / 8; // 1 hog ~= 10MB
-                const arr = []
-                arr.length = numbers; // Simulate allocation of 'size' bytes.
-                for (let i = 0; i < numbers; i++) {
-                    arr[i] = i;
-                }
-                memoryAllocations.push(arr);
-                utils.logLocal("new hog ["+ memoryAllocations.length + "]");
-            }
-            resolve(hogs);
-        }
-        catch( error ) {
-            reject( error );
-        }
-    });
-};
+function allocMemoryBlock(){
+    const arr = []
+    var blockSize = 10000 * 1024 / 8
+    arr.length = blockSize;
+    for (let i = 0; i < blockSize; i++) {
+        arr[i] = i;
+    }
+    memoryAllocations.push(arr);
+    var len = memoryAllocations.length-1;
+    utils.logLocal("new hog ["+ len + "]"); 
+}
+
 
 app.put('/metric/mem', function (req, res) {
     utils.logLocal("PUT /metric/mem " + JSON.stringify(req.body));
@@ -134,6 +130,8 @@ app.delete('/metric/mem', function (req, res) {
 });
 
 app.get('/metric/mem', function (req, res) {
+    var response = memOptions;
+    response.actual = memoryAllocations.length;
     res.json(memOptions);
 });
 
@@ -143,10 +141,10 @@ app.get('/metric/mem', function (req, res) {
 
 var cpuOptions = JSON.parse(JSON.stringify(factorySettings.cpu));
 
-var CPU_HOG_SIZE = 10000;
+var CPU_HOG_SIZE = 100000;
 if( typeof process.env.CPU_HOG_SIZE != 'undefined' ) {
     CPU_HOG_SIZE = parseInt(process.env.CPU_HOG_SIZE);
-    if(CPU_HOG_SIZE<1000) CPU_HOG_SIZE = 10000;
+    if(CPU_HOG_SIZE<1000) CPU_HOG_SIZE = 100000;
 }
 var cpuHogs = [];
 
@@ -156,22 +154,20 @@ function cpuHogBurst(){
     for( var i=0; i<countTo; i++){
         result = Math.random() * Math.random();
     }
-    utils.logLocal("oink");
+    // utils.logLocal("oink");
 }
 
-function addCpuHogs(hogs) {
-    for( var i=0; i<hogs; i++ ) {
-        var cpuInterval = setInterval(cpuHogBurst,1000);
-        cpuHogs.push(cpuInterval);    
-    }
+function addCpuHog() {
+    var cpuInterval = setInterval(cpuHogBurst,500);
+    cpuHogs.push(cpuInterval);    
+    utils.logLocal('Adding cpu hog [' + cpuHogs.length + ']');
 };
 
-function removeCpuHogs(hogs) {
-    for( var i=0; i<hogs; i++ ) {
-        var hog = cpuHogs.pop();
-        clearInterval(hog);
-        delete hog;
-    }
+function removeCpuHog() {
+    var hog = cpuHogs.pop();
+    clearInterval(hog);
+    delete hog;
+    utils.logLocal('Removed cpu hog [' + cpuHogs.length + ']');
 };
 
 function updateCpuHogs(){
@@ -180,10 +176,20 @@ function updateCpuHogs(){
     var diff = desiredCpuHogCount - currentCpuHogCount;
     if( diff >= 0 ) {
         utils.logLocal("Adding cpu hogs: " + diff );
-        addCpuHogs(diff);
+        for( var i=0; i<diff; i++){
+            setTimeout( ()=> {
+                addCpuHog();
+            }, i*2000);
+        }
+        
     } else {
-        utils.logLocal("Adding cpu hogs: " + diff );
-        removeCpuHogs(-diff);
+        diff = -diff;
+        utils.logLocal("Removing cpu hogs: " + diff );
+        for( var i=0; i<diff; i++){
+            setTimeout( ()=> {
+                removeCpuHog();
+            }, i*2000);
+        }
     }
     utils.logLocal("Current cpu hogs: " + cpuHogs.length );
 }
@@ -207,11 +213,14 @@ app.delete('/metric/cpu', function (req, res) {
     res.status(200).send("OK");
 });
 
+
 app.get('/metric/cpu', function (req, res) {
-    res.json(cpuOptions);
+    var response = cpuOptions;
+    response.actual = cpuHogs.length;
+    res.json(response);
 });
 
-
+//----------------------------------------------------------------------------------
 
 function resetToFactorySettings(){
     apiResOptions = JSON.parse(JSON.stringify(factorySettings.api));
@@ -220,13 +229,5 @@ function resetToFactorySettings(){
 }
 exports.resetToFactorySettings = resetToFactorySettings;
 
-// DEBUG
 
-// var prevCpu = process.cpuUsage().user;
-// function printCpu(){
-//     var curCpu =  process.cpuUsage().user;
-//     console.log( curCpu - prevCpu );
-//     prevCpu = curCpu;
-// }
 
-// setInterval( () => { printCpu(); }, 2000 );

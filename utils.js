@@ -75,10 +75,8 @@ function nextBoxMuller(){
 function genNormal(mean, stdev, min, max){
     var num = nextBoxMuller();
     var val = stdev * num + mean;
-    if( typeof min != 'undefined' && val < min ) {
-        val = min
-    } else if( typeof max != 'undefined' && val > max ) {
-       val = max;
+    while( min >= val && val >= max ) {
+        val = genNormal(mean, stdev, min, max);    
     }
     return val;
 }
@@ -98,3 +96,20 @@ function replaceAll(key, value, string) {
 }
 
 exports.replaceAll = replaceAll;
+
+
+function formatTime(timeInMs) {
+    if( 1000 <= timeInMs && timeInMs < 60000 ) {
+        var val = timeInMs/1000;
+        return val.toFixed(2) + ' sec';
+    } else if( 60000 <= timeInMs && timeInMs < 60*60*1000 ) {
+        var val = timeInMs/60000;
+        return val.toFixed(2) + ' min';
+    } else if( 60*60*1000 <= timeInMs ){
+        var val = timeInMs/(60*60*1000);
+        return val.toFixed(2) + ' hr';
+    }
+    
+    return timeInMs +'ms';
+}
+exports.formatTime = formatTime;
