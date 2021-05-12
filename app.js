@@ -3,6 +3,7 @@ const fs = require('fs');
 const http = require('http');
 const moment = require('moment');
 const parseUrl = require("parse-url");
+const promMid = require('express-prometheus-middleware');
 
 if (process.env.ENABLE_INSTANA == "true") {
     require('@instana/collector')();
@@ -25,6 +26,7 @@ app.set('port', process.env.PORT || 3000);
 
 app.enable('trust proxy');
 
+app.use(promMid());
 app.use(express.static(__dirname + '/public'));
 app.use(express.json());
 
