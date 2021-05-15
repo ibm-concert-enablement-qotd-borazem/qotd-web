@@ -502,6 +502,15 @@ app.delete('/logger/:id',
     }
 );
 
+app.delete('/logger',
+    function (req, res) {
+        logger.resetToFactorySettings();
+        utils.logLocal( "DELETE all logs"  ); 
+        res.status(200).send("OK");
+    }
+);
+
+
 //----------------------------------------------------------------------------------------------
 // Main App
 
