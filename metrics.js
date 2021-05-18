@@ -226,6 +226,8 @@ function resetToFactorySettings(){
     apiResOptions = JSON.parse(JSON.stringify(factorySettings.api));
     memOptions = JSON.parse(JSON.stringify(factorySettings.mem));
     cpuOptions = JSON.parse(JSON.stringify(factorySettings.cpu));
+    updateCpuHogs();
+    updateMemory();
 }
 exports.resetToFactorySettings = resetToFactorySettings;
 
