@@ -2,6 +2,64 @@ const faker = require('faker');
 const moment = require('moment');
 const utils = require('./utils.js');
 
+
+//----------------------------------------------------------------------------------------------
+// endpoint definitions
+
+app.post('/logger',
+    function (req, res) {
+        var logTemplate = req.body;
+
+        if( typeof logTemplate.repeat == 'undefined' ) {
+            // one time log
+            var log = genLog(logTemplate);
+            utils.log(log);
+        } else {
+            addLogger(logTemplate);
+        }
+        res.status(200).send("OK");
+    }
+);
+
+app.get('/logger',
+    function (req, res) {
+        var summary = [];
+        var loggers = getActiveLoggers();
+        var keys = Object.keys(loggers);
+        for(var i=0; i<keys.length; i++){
+            var key = keys[i];
+            var er = loggers[key];
+            summary.push( { "id": er.id, "name": er.name });
+        }
+        res.json(summary);
+    }
+);
+
+
+app.delete('/logger/:id',
+    function (req, res) {
+        var id = req.params.id;
+        var loggers = getActiveLoggers();
+        var log = loggers[id];
+        if( typeof log == 'undefined' || log == null ){
+            res.status(404).send("Not found");
+        } else {
+            removeLogger(log.id);
+            res.send("OK");
+        }
+    }
+);
+
+
+app.delete('/logger',
+    function (req, res) {
+        resetToFactorySettings();
+        utils.logLocal( "DELETE all logs"  ); 
+        res.status(200).send("OK");
+    }
+);
+
+
 function genValue(field) {
     var type = field.type;
     switch (type) {
@@ -116,8 +174,10 @@ function genLog(logger) {
 exports.genLog = genLog;
 
 function resetToFactorySettings(){
-    for(var i=0; i<activeLoggers.length; i++){
-        var logger = activeLoggers[i];
+    var keys = Object.keys(activeLoggers);
+    for(var i=0; i<keys.length; i++){
+        var key = keys[i];
+        var logger = activeLoggers[key];
         removeLogger(logger.id);
     }
 }

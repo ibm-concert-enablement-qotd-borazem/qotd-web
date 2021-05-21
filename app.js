@@ -65,7 +65,7 @@ app.delete('/liveness', function(req,res){
 // require these AFTER we have defined the express app
 const utils = require('./utils.js');
 const metrics = require('./metrics.js');
-const logger = require('./logger.js');
+const loggerEngine = require('./logger.js');
 
 function newReqToken() {
     if (USE_REQ_TOKEN) {
@@ -476,42 +476,6 @@ app.get('/pdf/:id',
 
 
 //----------------------------------------------------------------------------------------------
-// Logging
-
-app.post('/logger',
-    function (req, res) {
-        var logTemplate = req.body;
-
-        if( typeof logTemplate.repeat == 'undefined' ) {
-            // one time log
-            var log = logger.genLog(logTemplate);
-            utils.log(log);
-        } else {
-            logger.addLogger(logTemplate);
-        }
-        res.status(200).send("OK");
-    }
-);
-
-app.delete('/logger/:id',
-    function (req, res) {
-        var id = req.params.id;
-        logger.removeLogger(id);
-        utils.logLocal( "DELETE Logger id: " + id  ); 
-        res.status(200).send("OK");
-    }
-);
-
-app.delete('/logger',
-    function (req, res) {
-        logger.resetToFactorySettings();
-        utils.logLocal( "DELETE all logs"  ); 
-        res.status(200).send("OK");
-    }
-);
-
-
-//----------------------------------------------------------------------------------------------
 // Main App
 
 app.get('/version',
@@ -523,7 +487,7 @@ app.get('/version',
 
 app.post('/reset', function(req,res){
     metrics.resetToFactorySettings();
-    logger.resetToFactorySettings();
+    loggerEngine.resetToFactorySettings();
     res.send("OK");
 });
 
