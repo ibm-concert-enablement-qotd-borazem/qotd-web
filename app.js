@@ -1,13 +1,13 @@
+if (process.env.ENABLE_INSTANA == "true") {
+    require('@instana/collector')();
+}
+
 const express = require('express');
 const fs = require('fs');
 const http = require('http');
 const moment = require('moment');
 const parseUrl = require("parse-url");
 const promMid = require('express-prometheus-middleware');
-
-if (process.env.ENABLE_INSTANA == "true") {
-    require('@instana/collector')();
-}
 
 USE_REQ_TOKEN = true;
 if (typeof process.env.USE_REQ_TOKEN != 'undefined') {
