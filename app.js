@@ -1,7 +1,6 @@
 if (process.env.ENABLE_INSTANA == "true") {
     require('@instana/collector')();
 }
-
 const express = require('express');
 const fs = require('fs');
 const http = require('http');
@@ -22,7 +21,7 @@ PDF_SVC = process.env.PDF_SVC;
 app = express();
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
-app.set('port', process.env.PORT || 3000);
+app.set('port', 3000);
 
 app.enable('trust proxy');
 
@@ -33,39 +32,18 @@ app.use(express.json());
 //----------------------------------------------------------------------------------------------
 // Health
 
-var liveness = {
-    "healthy": true
-}
-
 app.get('/health', function(req,res){
-	if( liveness.healthy ) {
+	if( controler.isHealthy() ) {
 		res.status(200).send("Felling good, thank you.");
 	} else {
-		res.status(500).send("Not feeling too good, I am afraid.")
+		res.status(500).send("Not feeling too good, I am afraid.");
 	}
-});
-
-app.put('/liveness', function(req,res){
-    var nHealth = req.body;
-	healthy = nHealth;
-    utils.logLocal("Health updated to " + healthy );
-    res.json(health);
-});
-
-app.delete('/liveness', function(req,res){
-	health.healthy = true;
-    utils.logLocal("Reset health to " + healthy );
-    res.json(health);
 });
 
 
 //----------------------------------------------------------------------------------------------
 // Main app
 
-// require these AFTER we have defined the express app
-const utils = require('./utils.js');
-const metrics = require('./metrics.js');
-const loggerEngine = require('./logger.js');
 
 function newReqToken() {
     if (USE_REQ_TOKEN) {
@@ -485,85 +463,28 @@ app.get('/version',
     }
 );
 
-app.post('/reset', function(req,res){
-    metrics.resetToFactorySettings();
-    loggerEngine.resetToFactorySettings();
-    res.send("OK");
-});
 
 const package = require('./package.json');
 const appName = package.name;
 const appVersion = package.version;
 const buildInfo = fs.readFileSync('build.txt');
 
-var service = app.listen(app.get('port'), '0.0.0.0', function () {
+appService = app.listen(app.get('port'), '0.0.0.0', function () {
     console.log(`Starting ${appName} v${appVersion}, ${buildInfo} on port ${app.get('port')}`);
 });
 
-//----------------------------------------------------------------------------------------------
-// Service Actions
+//=====================================================================================================
+//=====================================================================================================
+// Control plane 
 
-function crash() {
-    utils.log("Aaaaah!");
-    // set up timer to crash after 3 seconds 
-    setTimeout(function () {
-        // process.exit(-1);  // produces simpler clear log entries than uncaught exception
-        process.nextTick(function () {
-            throw new Error;
-        });
-    }, 4000);
-}
+serviceController = express();
+serviceController.set('port', 8080)
+serviceController.enable('trust proxy');
+serviceController.use(express.json());
 
-function startService() {
-    service = app.listen(app.get('port'), '0.0.0.0', function () {
-        utils.logLocal(`Starting ${appName} v${appVersion}, ${buildInfo} on port ${app.get('port')}`);
-    });
-}
+const controler = require('./serviceController.js');
 
-function getPostData(req) {
-	return new Promise((resolve, reject) => {
-		try {
-			let body = '';
-			req.on('data', (chunk) => {
-				body += chunk.toString();
-			});
-			req.on('end', () => {
-				resolve(body);
-			});
-		} catch (error) {
-			reject(error);
-		}
-	});
-}
+// require these AFTER we have defined the serviceController express object
+const utils = require('./utils.js');
+const metrics = require('./metrics.js');
 
-const svcActionPort = ( process.env.SVC_ACTIONS_PORT || 8080 );
-
-http.createServer(async function (req, res) {
-    if (req.method == "POST") {
-        var data = await getPostData(req);
-        var obj = JSON.parse(data);
-        utils.log(`Service action: ${obj.action}`);
-        switch( obj.action ){
-            case 'crash': {
-                crash();
-                break;
-            }
-            case 'start': {
-                if( !service.listening ) startService();
-                break;
-            }
-            case 'stop': {
-                if( service.listening ) service.close();
-                break;
-            }
-        }
-        res.writeHead(200, { 'Content-Type': 'text/plain' });
-        res.write('OK');
-    } else {
-        utils.log(`Service action method: ${req.method}`);
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
-        res.write('Unknown request');
-    }
-    res.end();
-}).listen(svcActionPort);
-console.log(`Listening for service actions on ${svcActionPort}`);

@@ -6,7 +6,7 @@ const utils = require('./utils.js');
 //----------------------------------------------------------------------------------------------
 // endpoint definitions
 
-app.post('/logger',
+serviceController.post('/logger',
     function (req, res) {
         var logTemplate = req.body;
 
@@ -21,7 +21,7 @@ app.post('/logger',
     }
 );
 
-app.get('/logger',
+serviceController.get('/logger',
     function (req, res) {
         var summary = [];
         var loggers = getActiveLoggers();
@@ -36,7 +36,19 @@ app.get('/logger',
 );
 
 
-app.delete('/logger/:id',
+serviceController.get('/logger/:id',
+    function (req, res) {
+        var id = req.params.id;
+        var loggers = getActiveLoggers();
+        if( typeof loggers[id] == 'undefined' ){
+            res.status(404).send(`Logger ${id} not found.`);
+        } else {
+            res.json(loggers[id]);
+        }
+    }
+);
+
+serviceController.delete('/logger/:id',
     function (req, res) {
         var id = req.params.id;
         var loggers = getActiveLoggers();
@@ -51,7 +63,7 @@ app.delete('/logger/:id',
 );
 
 
-app.delete('/logger',
+serviceController.delete('/logger',
     function (req, res) {
         resetToFactorySettings();
         utils.logLocal( "DELETE all logs"  ); 

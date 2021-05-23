@@ -6,61 +6,84 @@ const factorySettings = require('./data/factory_settings.json');
 // --------------------------------------------------
 // Response time
 
-var apiResOptions = JSON.parse(JSON.stringify(factorySettings.api));
+var apiOptions = JSON.parse(JSON.stringify(factorySettings.api));
 
 function getDelay() {
-    var mean = apiResOptions.mean;
-    var stdev = apiResOptions.stdev;
-    var min = apiResOptions.min;
-    var max = apiResOptions.max;
+    var mean = apiOptions.mean;
+    var stdev = apiOptions.stdev;
+    var min = apiOptions.min;
+    var max = apiOptions.max;
     return utils.genNormalInt(mean, stdev, min, max);
 }
 exports.getDelay = getDelay;
 
-app.delete('/metric/apiRes', function (req, res) {
-    apiResOptions = JSON.parse(JSON.stringify(factorySettings.api));
-    utils.logLocal("DELETE /metric/apiRes ");
+serviceController.delete('/metric/api', function (req, res) {
+    apiOptions = JSON.parse(JSON.stringify(factorySettings.api));
+    utils.logLocal("DELETE /metric/api ");
     res.status(200).send("OK");
 });
 
 var apiRampInterval;
 
+function updateLatency(options){
+
+    if( typeof options.ramp == 'undefined' ) {
+        if( apiRampInterval ) {
+            clearInterval(apiRampInterval);
+            apiRampInterval = null;
+        }
+        apiOptions = options;
+    } else {
+        // incrementaly change the mean (up or down) over the 
+        var currentMean = apiOptions.mean;
+        var targetMean = options.mean;
+        var overPeriodOfTime = ramp; 
+        var slope = (targetMean - currentMean) / overPeriodOfTime;
+        var period = 1000; // update every 1s - roughtly corresponds to polling period
+        options.mean = currentMean;
+        apiOptions = options;
+        apiRampInterval = setInterval(updateApiOptions, period, slope, targetMean);
+    }
+
+}
+
 function updateApiOptions(slope, target) {
-    utils.logLocal("ramping api: " + apiResOptions.mean + " -> " + target  + ". Slope: " + slope);
-    apiResOptions.mean += slope;
-    if( apiResOptions.mean >= target ) {
-        apiResOptions.mean = target;
+    utils.logLocal("ramping api: " + apiOptions.mean + " -> " + target  + ". Slope: " + slope);
+    apiOptions.mean += slope;
+    if( apiOptions.mean >= target ) {
+        apiOptions.mean = target;
         clearInterval(apiRampInterval);
         apiRampInterval = null;
     }
 }
 
-app.put('/metric/apiRes', function (req, res) {
-    // todo: validation
-    utils.logLocal("PUT /metric/apiRes " + JSON.stringify(req.body));
-    var ramp = req.query.ramp;
-    if( typeof ramp == 'undefined' ) {
-        if( apiRampInterval ) {
-            clearInterval(apiRampInterval);
-            apiRampInterval = null;
-        }
-        apiResOptions = req.body;
-    } else {
-        // incrementaly change the mean (up or down) over the 
-        var currentMean = apiResOptions.mean;
-        var targetMean = req.body.mean;
-        var overPeriodOfTime = ramp/1000; //convert to seconds
-        var slope = (targetMean - currentMean) / overPeriodOfTime;
-        var period = 1000; // change every 1s - roughtly corresponds to polling period
-        req.body.mean = currentMean;
-        apiResOptions = req.body;
-        apiRampInterval = setInterval(updateApiOptions, period, slope, targetMean);
+serviceController.put('/metric/api', function (req, res) {
+    utils.logLocal("PUT /metric/api " + JSON.stringify(req.body));
+    if( typeof req.body.mean != 'undefined' ){
+        apiOptions.mean = req.body.mean;
+    }
+    if( typeof req.body.stdev != 'undefined' && req.body.stdev <= apiOptions.mean ){
+        apiOptions.stdev = req.body.stdev;
+    }
+    if( typeof req.body.min != 'undefined' && typeof req.body.max != 'undefined' ){
+        if( req.body.min < req.body.max ) {
+            apiOptions.min = req.body.min;
+            apiOptions.max = req.body.max;
+        } 
+    } else if( typeof req.body.min != 'undefined' && typeof req.body.max == 'undefined' ){
+        if( req.body.min < apiOptions.max ) {
+            apiOptions.min = req.body.min;
+        } 
+    } else if( typeof req.body.min == 'undefined' && typeof req.body.max != 'undefined' ){
+        if( apiOptions.min < req.body.max ) {
+            apiOptions.max = req.body.max;
+        } 
     }
     res.status(200).end("OK");
 });
 
-app.get('/metric/apiRes', function (req, res) {
-    res.json(apiResOptions);
+serviceController.get('/metric/api', function (req, res) {
+    res.json(apiOptions);
 });
 
 
@@ -69,10 +92,10 @@ app.get('/metric/apiRes', function (req, res) {
 
 var memOptions = JSON.parse(JSON.stringify(factorySettings.mem));
 
-var memoryAllocations = [];
+var memHogs = [];
 
-function updateMemory(){
-    var currentHogs = memoryAllocations.length;
+function updateMemoryHogs(){
+    var currentHogs = memHogs.length;
     var desiredHogs = memOptions.hogs;
     var diff = desiredHogs - currentHogs;
     if( diff >= 0  ) {
@@ -86,11 +109,11 @@ function updateMemory(){
     } else {
         diff = -diff;
         utils.logLocal( "Removing mem hogs: "+ diff);
-        if( diff >= memoryAllocations.length ) diff = memoryAllocations.length;
+        if( diff >= memHogs.length ) diff = memHogs.length;
         for(var i=0; i<diff; i++ ){
             setTimeout( () => {
-                memoryAllocations.pop();
-                utils.logLocal("hot dog hog ["+ memoryAllocations.length + "], taking out garbage");    
+                memHogs.pop();
+                utils.logLocal("hot dog hog ["+ memHogs.length + "], taking out garbage");    
                 global.gc();
             }, i*2000);
         }
@@ -99,39 +122,39 @@ function updateMemory(){
 
 function allocMemoryBlock(){
     const arr = []
-    var blockSize = 10000 * 1024 / 8
+    var blockSize = 5000 * 1024 / 8
     arr.length = blockSize;
     for (let i = 0; i < blockSize; i++) {
         arr[i] = i;
     }
-    memoryAllocations.push(arr);
-    var len = memoryAllocations.length-1;
+    memHogs.push(arr);
+    var len = memHogs.length-1;
     utils.logLocal("new hog ["+ len + "]"); 
 }
 
 
-app.put('/metric/mem', function (req, res) {
+serviceController.put('/metric/mem', function (req, res) {
     utils.logLocal("PUT /metric/mem " + JSON.stringify(req.body));
     if( req.body.hogs != 'undefined' && req.body.hogs >= 0 ){
         memOptions = req.body;
-        updateMemory();
+        updateMemoryHogs();
         res.status(200).json(memOptions);
     } else {
-        utils.logLocal("Invalid number of hogs: " + req.body.hogs);
-        res.status(400).end("Invalid number of hogs: " + req.body.hogs);
+        utils.logLocal("Invalid number of mem hogs: " + req.body.hogs);
+        res.status(400).end("Invalid number of mem hogs: " + req.body.hogs);
     }
 });
 
-app.delete('/metric/mem', function (req, res) {
+serviceController.delete('/metric/mem', function (req, res) {
     utils.logLocal("DELETE /metric/mem ");
     memOptions = JSON.parse(JSON.stringify(factorySettings.mem));
-    updateMemory();
+    updateMemoryHogs();
     res.status(200).send("OK");
 });
 
-app.get('/metric/mem', function (req, res) {
+serviceController.get('/metric/mem', function (req, res) {
     var response = memOptions;
-    response.actual = memoryAllocations.length;
+    response.actual = memHogs.length;
     res.json(memOptions);
 });
 
@@ -194,19 +217,19 @@ function updateCpuHogs(){
     utils.logLocal("Current cpu hogs: " + cpuHogs.length );
 }
 
-app.put('/metric/cpu', function (req, res) {
+serviceController.put('/metric/cpu', function (req, res) {
     utils.logLocal("PUT /metric/mem " + JSON.stringify(req.body));
     if( req.body.hogs != 'undefined' && req.body.hogs >= 0 ){
         cpuOptions = req.body;
         updateCpuHogs();
         res.status(200).json(cpuOptions);
     } else {
-        utils.logLocal("Invalid number of hogs: " + req.body.hogs);
-        res.status(400).end("Invalid number of hogs: " + req.body.hogs);
+        utils.logLocal("Invalid number of cpu hogs: " + req.body.hogs);
+        res.status(400).end("Invalid number of cpu hogs: " + req.body.hogs);
     }
 });
 
-app.delete('/metric/cpu', function (req, res) {
+serviceController.delete('/metric/cpu', function (req, res) {
     utils.logLocal("DELETE /metric/cpu ");
     cpuOptions = JSON.parse(JSON.stringify(factorySettings.cpu));
     updateCpuHogs();
@@ -214,20 +237,65 @@ app.delete('/metric/cpu', function (req, res) {
 });
 
 
-app.get('/metric/cpu', function (req, res) {
+serviceController.get('/metric/cpu', function (req, res) {
     var response = cpuOptions;
     response.actual = cpuHogs.length;
     res.json(response);
 });
 
+function getStatus(){
+    var mem = memOptions;
+    mem.actual = memHogs.length;
+    var cpu = cpuOptions;
+    cpu.actual = cpuHogs.length;
+    var status = {
+        "api": apiOptions,
+        "mem": mem,
+        "cpu": cpu
+    }
+    return status;
+}
+// get em all
+serviceController.get('/metric', function (req, res) {
+    var status = getStatus();
+    utils.logLocal("GET /metric " + JSON.stringify(status));
+    res.json(status);
+});
+
+serviceController.put('/metric', function (req, res) {
+
+    utils.logLocal("PUT /metric " + JSON.stringify(req.body));
+
+    if( req.body.api != 'undefined' ){
+        updateLatency(req.body.api);
+    } 
+    if( req.body.mem != 'undefined' ) {
+        memOptions = req.body.mem;
+        updateMemoryHogs();
+    }
+    if( req.body.cpu != 'undefined' ) {
+        cpuOptions = req.body.cpu;
+        updateCpuHogs();
+    }
+
+    var status = getStatus();
+    res.json(status);
+});
+
+serviceController.delete('/metric', function (req, res) {
+    utils.logLocal("DELETE /metric " + JSON.stringify(req.body));
+    resetToFactorySettings();
+    res.send("OK");
+});
+
 //----------------------------------------------------------------------------------
 
 function resetToFactorySettings(){
-    apiResOptions = JSON.parse(JSON.stringify(factorySettings.api));
+    apiOptions = JSON.parse(JSON.stringify(factorySettings.api));
     memOptions = JSON.parse(JSON.stringify(factorySettings.mem));
     cpuOptions = JSON.parse(JSON.stringify(factorySettings.cpu));
     updateCpuHogs();
-    updateMemory();
+    updateMemoryHogs();
 }
 exports.resetToFactorySettings = resetToFactorySettings;
 
