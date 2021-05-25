@@ -122,7 +122,7 @@ function updateMemoryHogs(){
 
 function allocMemoryBlock(){
     const arr = []
-    var blockSize = 5000 * 1024 / 8
+    var blockSize = 7000 * 1024 / 8
     arr.length = blockSize;
     for (let i = 0; i < blockSize; i++) {
         arr[i] = i;
@@ -164,10 +164,10 @@ serviceController.get('/metric/mem', function (req, res) {
 
 var cpuOptions = JSON.parse(JSON.stringify(factorySettings.cpu));
 
-var CPU_HOG_SIZE = 100000;
+var CPU_HOG_SIZE = 50000;
 if( typeof process.env.CPU_HOG_SIZE != 'undefined' ) {
     CPU_HOG_SIZE = parseInt(process.env.CPU_HOG_SIZE);
-    if(CPU_HOG_SIZE<1000) CPU_HOG_SIZE = 100000;
+    if(CPU_HOG_SIZE<1000) CPU_HOG_SIZE = 50000;
 }
 var cpuHogs = [];
 
