@@ -41,11 +41,11 @@ function pickWeighted(options){
 exports.pickWeighted = pickWeighted;
 
 function log(msg,token){
-    if( typeof token == 'undefined' || token == ''){
-        console.log(msg);
-    } else {
-        console.log('['+token+'] ' + msg);
+    var record = msg;
+    if( typeof token != 'undefined' && token != ''){
+        record = '['+token+'] ' + record;
     }
+    console.log(record);
 }
 
 exports.log = log;
