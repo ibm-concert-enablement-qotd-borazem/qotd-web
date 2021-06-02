@@ -23,28 +23,16 @@ serviceController.delete('/metric/api', function (req, res) {
     res.status(200).send("OK");
 });
 
-var apiRampInterval;
-
 function updateLatency(options){
-
-    if( typeof options.ramp == 'undefined' ) {
-        if( apiRampInterval ) {
-            clearInterval(apiRampInterval);
-            apiRampInterval = null;
-        }
-        apiOptions = options;
-    } else {
-        // incrementaly change the mean (up or down) over the 
-        var currentMean = apiOptions.mean;
-        var targetMean = options.mean;
-        var overPeriodOfTime = ramp; 
-        var slope = (targetMean - currentMean) / overPeriodOfTime;
-        var period = 1000; // update every 1s - roughtly corresponds to polling period
-        options.mean = currentMean;
-        apiOptions = options;
-        apiRampInterval = setInterval(updateApiOptions, period, slope, targetMean);
+    if( typeof options.mean != 'undefined' && options.mean > 10 && options.mean < 5000 ) {
+        apiOptions.mean  = options.mean;
+    } else if( typeof options.stdev != 'undefined' && options.stdev > 10 && options.stdev < 5000 ) {
+        apiOptions.stdev  = options.stdev;
+    } else if( typeof options.min != 'undefined'  && options.min > 10 && options.min < 3000 ) {
+        apiOptions.min  = options.min;
+    } else if( typeof options.max != 'undefined' && options.max > options.min && options.max < 10000 ) {
+        apiOptions.max  = options.max;
     }
-
 }
 
 function updateApiOptions(slope, target) {
