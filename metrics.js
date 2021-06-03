@@ -90,7 +90,7 @@ function updateMemoryHogs(){
         for(var i=0; i<diff; i++ ){
             setTimeout( () => {
                 allocMemoryBlock();
-            }, i*2000);
+            }, i*1000);
         }
     } else {
         diff = -diff;
@@ -98,24 +98,36 @@ function updateMemoryHogs(){
         if( diff >= memHogs.length ) diff = memHogs.length;
         for(var i=0; i<diff; i++ ){
             setTimeout( () => {
-                memHogs.pop();
-                utils.logLocal("hot dog hog ["+ memHogs.length + "], taking out garbage");    
-                global.gc();
-            }, i*2000);
+                freeMemoryBlock();
+            }, i*1000);
         }
     }
 }
 
-function allocMemoryBlock(){
-    const arr = []
-    var blockSize = 7000 * 1024 / 8
-    arr.length = blockSize;
-    for (let i = 0; i < blockSize; i++) {
-        arr[i] = i;
+function freeMemoryBlock(){
+    var currentHogs = memHogs.length;
+    var desiredHogs = memOptions.hogs;
+    if( desiredHogs < currentHogs) {
+        memHogs.pop();
+        utils.logLocal("hot dog hog ["+ memHogs.length + "], taking out garbage");    
+        global.gc();
     }
-    memHogs.push(arr);
-    var len = memHogs.length-1;
-    utils.logLocal("new hog ["+ len + "]"); 
+}
+
+function allocMemoryBlock(){
+    var currentHogs = memHogs.length;
+    var desiredHogs = memOptions.hogs;
+    if( desiredHogs > currentHogs) {
+        const arr = []
+        var blockSize = 7000 * 1024 / 8
+        arr.length = blockSize;
+        for (let i = 0; i < blockSize; i++) {
+            arr[i] = i;
+        }
+        memHogs.push(arr);
+        var len = memHogs.length-1;
+        utils.logLocal("new hog ["+ len + "]");     
+    }
 }
 
 
@@ -167,37 +179,44 @@ function cpuHogBurst(){
 }
 
 function addCpuHog() {
-    var cpuInterval = setInterval(cpuHogBurst,500);
-    cpuHogs.push(cpuInterval);    
-    utils.logLocal('Adding cpu hog [' + cpuHogs.length + ']');
+    var currentCpuHogCount = cpuHogs.length;
+    var desiredCpuHogCount = cpuOptions.hogs;
+    if( currentCpuHogCount < desiredCpuHogCount ) {
+        var cpuInterval = setInterval(cpuHogBurst,500);
+        cpuHogs.push(cpuInterval);    
+        utils.logLocal('Adding cpu hog [' + cpuHogs.length + ']');    
+    }
 };
 
 function removeCpuHog() {
-    var hog = cpuHogs.pop();
-    clearInterval(hog);
-    delete hog;
-    utils.logLocal('Removed cpu hog [' + cpuHogs.length + ']');
+    var currentCpuHogCount = cpuHogs.length;
+    var desiredCpuHogCount = cpuOptions.hogs;
+    if( currentCpuHogCount > desiredCpuHogCount ) {
+        var hog = cpuHogs.pop();
+        clearInterval(hog);
+        delete hog;
+        utils.logLocal('Removed cpu hog [' + cpuHogs.length + ']');
+    }
 };
 
 function updateCpuHogs(){
     var currentCpuHogCount = cpuHogs.length;
     var desiredCpuHogCount = cpuOptions.hogs;
     var diff = desiredCpuHogCount - currentCpuHogCount;
-    if( diff >= 0 ) {
+    if( diff > 0 ) {
         utils.logLocal("Adding cpu hogs: " + diff );
-        for( var i=0; i<diff; i++){
+        for( i=0; i<diff; i++){
             setTimeout( ()=> {
                 addCpuHog();
-            }, i*2000);
+            }, i*500);
         }
-        
-    } else {
+    } else if( diff < 0 ) {
         diff = -diff;
         utils.logLocal("Removing cpu hogs: " + diff );
         for( var i=0; i<diff; i++){
             setTimeout( ()=> {
                 removeCpuHog();
-            }, i*2000);
+            }, i*500);
         }
     }
     utils.logLocal("Current cpu hogs: " + cpuHogs.length );
@@ -228,6 +247,8 @@ serviceController.get('/metric/cpu', function (req, res) {
     response.actual = cpuHogs.length;
     res.json(response);
 });
+
+//----------------------------------------------------------------------
 
 function getStatus(){
     var mem = memOptions;
