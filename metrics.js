@@ -35,12 +35,23 @@ function updateLatency(options){
     } else if( typeof options.min != 'undefined' && !isNaN(options.min) ) {
         if( options.min > 10 && options.min < 3000 ) {
             apiOptions.min  = options.min;
+        } else {
+            options.min = 10;
         }
     } else if( typeof options.max != 'undefined' && !isNaN(options.min) ) { 
         if( options.max > options.min && options.max < 10000 ) {
             apiOptions.max  = options.max;
-        }
+        } 
     }
+
+    // final check
+    if( apiOptions.max <= apiOptions.mean ) {
+        apiOptions.max = apiOptions.mean * 2;
+    }
+    if( apiOptions.min >= apiOptions.mean ) {
+        apiOptions.min = 5;
+    }
+
 }
 
 serviceController.put('/metric/api', function (req, res) {
