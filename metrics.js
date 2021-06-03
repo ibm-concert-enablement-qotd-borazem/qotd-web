@@ -24,24 +24,22 @@ serviceController.delete('/metric/api', function (req, res) {
 });
 
 function updateLatency(options){
-    if( typeof options.mean != 'undefined' && options.mean > 10 && options.mean < 5000 ) {
-        apiOptions.mean  = options.mean;
-    } else if( typeof options.stdev != 'undefined' && options.stdev > 10 && options.stdev < 5000 ) {
-        apiOptions.stdev  = options.stdev;
-    } else if( typeof options.min != 'undefined'  && options.min > 10 && options.min < 3000 ) {
-        apiOptions.min  = options.min;
-    } else if( typeof options.max != 'undefined' && options.max > options.min && options.max < 10000 ) {
-        apiOptions.max  = options.max;
-    }
-}
-
-function updateApiOptions(slope, target) {
-    utils.logLocal("ramping api: " + apiOptions.mean + " -> " + target  + ". Slope: " + slope);
-    apiOptions.mean += slope;
-    if( apiOptions.mean >= target ) {
-        apiOptions.mean = target;
-        clearInterval(apiRampInterval);
-        apiRampInterval = null;
+    if( typeof options.mean != 'undefined' && !isNaN(options.mean) ) {
+        if( options.mean > 10 && options.mean < 5000 ) {
+            apiOptions.mean  = options.mean;
+        }
+    } else if( typeof options.stdev != 'undefined' && !isNaN(options.stdev) ) {
+        if( options.stdev > 10 && options.stdev < 5000 ) {
+            apiOptions.stdev  = options.stdev;
+        }
+    } else if( typeof options.min != 'undefined' && !isNaN(options.min) ) {
+        if( options.min > 10 && options.min < 3000 ) {
+            apiOptions.min  = options.min;
+        }
+    } else if( typeof options.max != 'undefined' && !isNaN(options.min) ) { 
+        if( options.max > options.min && options.max < 10000 ) {
+            apiOptions.max  = options.max;
+        }
     }
 }
 
