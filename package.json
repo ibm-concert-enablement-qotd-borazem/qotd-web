@@ -9,7 +9,7 @@
 		"express": "^4.17.1",
 		"ejs": "2.5.x",
 		"moment": "^2.29.1",
-		"@instana/collector": "^1.119.2",
+		"@instana/collector": "^1.125.0",
 		"dateformat": "^3.0.*",
 		"faker": "^5.2.0",
 		"parse-url": "^5.0.2",
