@@ -7,6 +7,7 @@ const http = require('http');
 const moment = require('moment');
 const parseUrl = require("parse-url");
 const promMid = require('express-prometheus-middleware');
+const faker = require('faker');
 
 USE_REQ_TOKEN = true;
 if (typeof process.env.USE_REQ_TOKEN != 'undefined') {
@@ -17,6 +18,7 @@ QUOTE_SVC = process.env.QUOTE_SVC;
 AUTHOR_SVC = process.env.AUTHOR_SVC;
 RATING_SVC = process.env.RATING_SVC;
 PDF_SVC = process.env.PDF_SVC;
+ORDER_SVC = process.env.ORDER_SVC;
 
 app = express();
 app.set('views', __dirname + '/views');
@@ -207,6 +209,9 @@ app.get('/', function (req, res) {
                 quote.title = "Quote of the Day";
                 addRating(quote, requestToken)
                 .then((quote) => {
+                    if( typeof ORDER_SVC != 'undefined' && ORDER_SVC != "" ) {
+                        quote.enableOrdering = true;
+                    }
                     res.render('home', quote);
                 })
                 .catch(
@@ -246,6 +251,9 @@ app.get('/random', function (req, res) {
                 quote.title = "Random Quote";
                 addRating(quote, requestToken)
                     .then((quote) => {
+                        if( typeof ORDER_SVC != 'undefined' && ORDER_SVC != "" ) {
+                            quote.enableOrdering = true;
+                        }
                         res.render('home', quote);
                     })
                     .catch(
@@ -452,6 +460,93 @@ app.get('/pdf/:id',
     }
 );
 
+app.get('/order/:id',
+    function (req, res) {
+        var start = new Date().getTime();
+        var requestToken = newReqToken();
+        var delay = metrics.getDelay();
+        var id = req.params.id;
+        var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+        utils.log('Starting new request token: ' + requestToken + ' for IP: ' + ip);
+        utils.log("GET Order request id: " + id, requestToken);
+        utils.logLocal('[' + start + '] GET Order Service being delayed: ' + delay + 'ms');
+
+        var order = {
+            "id": id,
+            "token": requestToken,
+            "dedication": faker.lorem.slug(),
+            "street": faker.address.streetAddress(),
+            "city": faker.address.cityName(),
+            "state": faker.address.stateAbbr()
+        }
+        order.zip = faker.address.zipCodeByState(order.state);
+
+        setTimeout(()=>{
+            res.render('order',order);
+        },delay);
+    }
+);
+
+app.post('/order/:id',
+    function (req, res) {
+        var start = new Date().getTime();
+        var requestToken = req.query.requestToken;
+        var delay = metrics.getDelay();
+        var id = req.params.id;
+        utils.log("POST Order details for quote id: " + id, requestToken);
+        utils.logLocal('[' + start + '] POST Order Service being delayed: ' + delay + 'ms');
+
+        var order = req.body;
+        var payload = JSON.stringify(order);
+
+        var parsedUrl = parseUrl(ORDER_SVC);
+        var hostname = parsedUrl.resource;
+        var port = 80;
+        if (parsedUrl.port != null) port = parsedUrl.port;  
+        var path = parsedUrl.pathname + '/order?requestToken=' + requestToken;
+        setTimeout(function () {
+            const options = {
+                "headers": { "Content-Type": "application/json" },
+                "Content-Length": payload.length,
+                "method": 'POST',
+                "hostname": hostname,
+                "port": port,
+                "path": path
+            }
+
+            var orderReq = http.request(options, function (orderRes) {
+                utils.logLocal(`\tPOST http://${options.hostname}:${options.port}${options.path}`);
+                utils.logLocal('\t'+payload);
+                var rawData = [];
+                orderRes.on('data', (chunk) => {
+                    rawData.push(chunk);
+                });
+                orderRes.on('end', () => {
+                    utils.logLocal(`\tFinished POST http://${options.hostname}:${options.port}${options.path}`);
+    
+                    if (orderRes.statusCode == 200) {
+                        var buffer = Buffer.concat(rawData).toString();
+                        utils.logLocal(`\tGot POST respponse http://${options.hostname}:${options.port}${options.path} ${buffer}`);
+                        res.status(200).send("Success");
+                    } else {
+                        utils.logLocal(`\tGot POST status response http://${options.hostname}:${options.port}${options.path} ${orderRes.statusCode}`);
+                        res.status(orderRes.statusCode).send("Problem with Order service.");
+                    }
+                });
+            });
+    
+            orderReq.on('error', error => {
+                utils.logLocal(`\tGot POST Error  http://${options.hostname}:${options.port}${options.path} ${error}`);
+                res.status(500).send(error);
+            });
+
+            orderReq.write(payload);
+            orderReq.end();
+            
+        }, delay);
+    }
+
+);
 
 //----------------------------------------------------------------------------------------------
 // Main App

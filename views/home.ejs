@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
-  <head>
+
+<head>
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -10,47 +11,64 @@
     <link rel="icon" type="/image/png" href="/images/hybridcloud.png">
     <link rel="stylesheet" href="/css/home.css">
     <title>Quote of the Day</title>
-  </head>
+</head>
+
 <body>
 
-<main role="main">
+    <main role="main">
 
-  <div class="container">
-    <div class="row">
-      <div class="col-12">
-          <a id="home_link" href="/"><button class="btn btn-outline-dark float-left">Home</button></a>
-          <a id="random_link" href="/random"><button class="btn btn-outline-dark float-right">Random Quote</button></a>
-      </div>
-    </div>
-  </div>
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <a id="home_link" href="/"><button class="btn btn-outline-dark float-left">Home</button></a>
+                    <a id="random_link" href="/random"><button class="btn btn-outline-dark float-right">Random
+                            Quote</button></a>
+                </div>
+            </div>
+        </div>
 
 
-  <section class="jumbotron text-center">
-    <div class="container">
-      <h1 class="jumbotron-heading"><%= title %></h1>
-      <h5><%= today %></h5>
-      <p class="lead text-muted">
-          <i><%=quote%></i>
-      </p>
-      <p>- <a id="author_link" href="/author/<%=author_id%>"><%=author%></a></p>
-      <p>[<%=genre%>]</p>
-      <p>
-        <% if( rating < 0 || rating > 10) { %>
-            (Rating service not currently available)
-        <% } else { %>
-            <img src="/images/<%=rating%>star.png">
-        <% } %>      
-        
-    </p>
-    </div>
-  </section>
+        <section class="jumbotron text-center">
+            <div class="container">
+                <h1 class="jumbotron-heading">
+                    <%= title %>
+                </h1>
+                <h5>
+                    <%= today %>
+                </h5>
+                <p class="lead text-muted">
+                    <i>
+                        <%=quote%>
+                    </i>
+                </p>
+                <p>- <a id="author_link" href="/author/<%=author_id%>">
+                        <%=author%>
+                    </a></p>
+                <p>[<%=genre%>]</p>
+                <p>
+                    <% if( rating < 0 || rating> 10) { %>
+                        (Rating service not currently available)
+                        <% } else { %>
+                            <img src="/images/<%=rating%>star.png">
+                            <% } %>
 
-  <div class="container" style="padding-top: 100px;">
-    <a id="pdf_link" href="/pdf/<%=id%>"><img src="/images/pdf.png" width="24"></a>
-  </div>
+                </p>
+            </div>
+        </section>
 
-</main>
+        <div class="row" style="padding-top: 100px;">
+            <div class="container" style="text-align: left;">
+                <a id="pdf_link" href="/pdf/<%=id%>"><button class="btn btn-outline-dark">PDF &nbsp; <img src="/images/pdf.png" width="16"></button></a>
+            <% if( typeof enableOrdering != 'undefined' && enableOrdering ) { %>
+                <a id="random_link" href="/order/<%=id%>" style="text-align: right;"><button class="btn btn-outline-dark float-right">Order Engraving</button></a>
 
-    
+            <% } %>
+        </div>
+        </div>
+
+    </main>
+
+
 </body>
+
 </html>
