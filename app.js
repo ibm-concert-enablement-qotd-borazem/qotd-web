@@ -474,6 +474,7 @@ app.get('/order/:id',
         var order = {
             "id": id,
             "token": requestToken,
+            "orderNo": faker.finance.account,
             "dedication": faker.lorem.slug(),
             "street": faker.address.streetAddress(),
             "city": faker.address.cityName(),
@@ -487,8 +488,23 @@ app.get('/order/:id',
     }
 );
 
+async function getQuote(id,requestToken){
+    var parsedUrl = parseUrl(QUOTE_SVC);
+    var hostname = parsedUrl.resource;
+    var port = 80;
+    if (parsedUrl.port != null) port = parsedUrl.port;  
+    const options = {
+        "headers": { "Accept": "application/json" },
+        "method": 'GET',
+        "hostname": hostname,
+        "port": port,
+        "path": `/quotes/${id}?requestToken=${requestToken}`
+    }
+    return utils.httpRequest(options);
+}
+
 app.post('/order/:id',
-    function (req, res) {
+    async function (req, res) {
         var start = new Date().getTime();
         var requestToken = req.query.requestToken;
         var delay = metrics.getDelay();
@@ -497,6 +513,20 @@ app.post('/order/:id',
         utils.logLocal('[' + start + '] POST Order Service being delayed: ' + delay + 'ms');
 
         var order = req.body;
+        order.customer = faker.finance.accountName;
+
+        var quote;
+        try{
+            quote = await getQuote(id,requestToken);
+        } catch( error ) {
+            utils.log(error,requestToken);
+            res.status(500).send(error);
+            return;
+        }
+    
+        var quote = await getQuote(id,requestToken);
+        order.quote = quote.quote;
+        order.author = quote.author;
         var payload = JSON.stringify(order);
 
         var parsedUrl = parseUrl(ORDER_SVC);
