@@ -22,7 +22,7 @@
     <div class="container">
         <div class="row">
             <div class="col-12">
-                <a href="/"><button class="btn btn-outline-dark float-left">Home</button></a>
+                <a id="linkHome" href="/"><button class="btn btn-outline-dark float-left">Home</button></a>
             </div>
         </div>
 
@@ -56,8 +56,8 @@
                         </div>
                     </div>
                 </form>
-                <button class="btn btn-primary" onclick="order()">Order Engraving</button>
-                <button class="btn btn-outline-danger" onclick="cancel()">Cancel</button>
+                <button id="btnOrderEngraving" class="btn btn-primary" onclick="order()">Order Engraving</button>
+                <button id="btnCancel" class="btn btn-outline-danger" onclick="cancel()">Cancel</button>
         </div>
             <div class="col-3">
             </div>
@@ -78,7 +78,7 @@
               <p id="orderInformation"></p>
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="confirmed()">Close</button>
+              <button id="btnCloseOrderInformationDialog" type="button" class="btn btn-secondary" data-dismiss="modal" onclick="confirmed()">Close</button>
             </div>
           </div>
         </div>

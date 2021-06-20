@@ -20,8 +20,8 @@
         <div class="container">
             <div class="row">
                 <div class="col-12">
-                    <a id="home_link" href="/"><button class="btn btn-outline-dark float-left">Home</button></a>
-                    <a id="random_link" href="/random"><button class="btn btn-outline-dark float-right">Random
+                    <a id="home_link" href="/"><button id="btnHome" class="btn btn-outline-dark float-left">Home</button></a>
+                    <a id="random_link" href="/random"><button id="btnRandom" class="btn btn-outline-dark float-right">Random
                             Quote</button></a>
                 </div>
             </div>
@@ -37,7 +37,7 @@
                     <%= today %>
                 </h5>
                 <p class="lead text-muted">
-                    <i>
+                    <i id="quote">
                         <%=quote%>
                     </i>
                 </p>
@@ -48,19 +48,18 @@
                 <p>
                     <% if( rating < 0 || rating> 10) { %>
                         (Rating service not currently available)
-                        <% } else { %>
-                            <img src="/images/<%=rating%>star.png">
-                            <% } %>
-
+                    <% } else { %>
+                        <img id="ratingImg" src="/images/<%=rating%>star.png">
+                    <% } %>
                 </p>
             </div>
         </section>
 
         <div class="row" style="padding-top: 100px;">
             <div class="container" style="text-align: left;">
-                <a id="pdf_link" href="/pdf/<%=id%>"><button class="btn btn-outline-dark">PDF &nbsp; <img src="/images/pdf.png" width="16"></button></a>
+                <a id="pdf_link" href="/pdf/<%=id%>"><button id="btnPDF" class="btn btn-outline-dark">PDF &nbsp; <img src="/images/pdf.png" width="16"></button></a>
             <% if( typeof enableOrdering != 'undefined' && enableOrdering ) { %>
-                <a id="random_link" href="/order/<%=id%>" style="text-align: right;"><button class="btn btn-outline-dark float-right">Order Engraving</button></a>
+                <a id="order_link" href="/order/<%=id%>" style="text-align: right;"><button id="btnOrder" class="btn btn-outline-dark float-right">Order Engraving</button></a>
 
             <% } %>
         </div>
