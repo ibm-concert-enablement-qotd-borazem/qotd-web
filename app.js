@@ -190,6 +190,51 @@ function getRandomQuote(requestToken) {
     });
 }
 
+
+DOUBLE_RATING = false;
+
+app.get('/double-rating', function(req,res){
+    DOUBLE_RATING = !DOUBLE_RATING;
+    res.send("DOUBLE_RATING="+DOUBLE_RATING);
+});
+
+function callRating(quote,requestToken){
+    // call rating for no good reason
+    utils.logLocal("Calling Double Rating");
+    utils.log('Getting rating for quote: ' + quote.id, requestToken);
+    var parsedUrl = parseUrl(RATING_SVC);
+    var hostname = parsedUrl.resource;
+    var port = 80;
+    if (parsedUrl.port != null) port = parsedUrl.port;    
+    const options = {
+        "headers": { "Accept": "application/json" },
+        "method": 'GET',
+        "hostname": hostname,
+        "port": port,
+        "path": '/ratings/' + quote.id + '?requestToken=' + requestToken
+    }
+
+    http.request(options, function (ratingRes) {
+        var rawData = [];
+        ratingRes.on('data', (chunk) => {
+            rawData.push(chunk);
+        });
+        ratingRes.on('end', () => {
+            utils.logLocal(`Rating svc response http://${options.hostname}:${options.port}${options.path}: ${ratingRes.statusCode}`);
+
+            if (ratingRes.statusCode == 200) {
+                utils.log('Got rating for quote: ' + quote.id, requestToken);
+            } else {
+                utils.log('Rejecting rating for quote.  Status: ' + ratingRes.statusCode, requestToken);
+            }
+        });
+    })
+    .on('error', error => {
+        utils.log('Rejecting rating for quote. ' + error, requestToken);
+    })
+    .end();
+}
+
 app.get('/', function (req, res) {
     var start = new Date().getTime();
     var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
@@ -207,6 +252,10 @@ app.get('/', function (req, res) {
                 
                 quote.today = now.format("dddd, MMMM Do YYYY");
                 quote.title = "Quote of the Day";
+
+                if( DOUBLE_RATING ) {
+                    callRating(quote,requestToken);
+                }
                 addRating(quote, requestToken)
                 .then((quote) => {
                     if( typeof ORDER_SVC != 'undefined' && ORDER_SVC != "" ) {
@@ -222,6 +271,7 @@ app.get('/', function (req, res) {
                         res.render('home', quote);
                     }
                 );
+
             })
             .catch(
                 (err) => {
@@ -249,6 +299,9 @@ app.get('/random', function (req, res) {
             .then((quote) => {
                 quote.today = "";
                 quote.title = "Random Quote";
+                if( DOUBLE_RATING ) {
+                    callRating(quote,requestToken);
+                }
                 addRating(quote, requestToken)
                     .then((quote) => {
                         if( typeof ORDER_SVC != 'undefined' && ORDER_SVC != "" ) {
