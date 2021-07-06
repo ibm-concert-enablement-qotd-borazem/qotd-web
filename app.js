@@ -1,6 +1,28 @@
 if (process.env.ENABLE_INSTANA == "true") {
     require('@instana/collector')();
 }
+
+// Instana web app token
+const INSTANA_REPORTING_URL = process.env.INSTANA_REPORTING_URL;
+const INSTANA_ENUM_MIN_JS_URL = process.env.INSTANA_ENUM_MIN_JS_URL;
+const INSTANA_KEY = process.env.INSTANA_KEY;
+var INSTANA_HEADER = "";
+
+if( typeof INSTANA_REPORTING_URL != 'undefined' && INSTANA_REPORTING_URL != "" 
+    && typeof INSTANA_ENUM_MIN_JS_URL != 'undefined' && INSTANA_ENUM_MIN_JS_URL != "" 
+    && typeof INSTANA_KEY != 'undefined' && INSTANA_KEY != "" )  {
+    
+    INSTANA_HEADER = 
+        `<script>\n` + 
+        `  (function(s,t,a,n){s[t]||(s[t]=a,n=s[a]=function(){n.q.push(arguments)},\n` + 
+        `  n.q=[],n.v=2,n.l=1*new Date)})(window,"InstanaEumObject","ineum");\n` + 
+        `  ineum('reportingUrl', '${INSTANA_REPORTING_URL}');\n` + 
+        `  ineum('key', '${INSTANA_KEY}');\n` + 
+        `  ineum('trackSessions');\n` + 
+        `</script>\n` + 
+        `<script defer crossorigin="anonymous" src="${INSTANA_ENUM_MIN_JS_URL}"></script>\n`;
+}
+
 const express = require('express');
 const fs = require('fs');
 const http = require('http');
@@ -261,6 +283,7 @@ app.get('/', function (req, res) {
                     if( typeof ORDER_SVC != 'undefined' && ORDER_SVC != "" ) {
                         quote.enableOrdering = true;
                     }
+                    quote.INSTANA_HEADER = INSTANA_HEADER;
                     res.render('home', quote);
                 })
                 .catch(
@@ -268,6 +291,7 @@ app.get('/', function (req, res) {
                         utils.log(" Problem getting rating. Err: " + err, requestToken);
                         // send th epage anyway but with a -1 rating
                         quote.rating = -1;
+                        quote.INSTANA_HEADER = INSTANA_HEADER;
                         res.render('home', quote);
                     }
                 );
@@ -307,6 +331,7 @@ app.get('/random', function (req, res) {
                         if( typeof ORDER_SVC != 'undefined' && ORDER_SVC != "" ) {
                             quote.enableOrdering = true;
                         }
+                        quote.INSTANA_HEADER = INSTANA_HEADER;
                         res.render('home', quote);
                     })
                     .catch(
@@ -314,6 +339,7 @@ app.get('/random', function (req, res) {
                             utils.log(" Problem getting rating. Err: " + err, requestToken);
                             // send th epage anyway but with a -1 rating
                             quote.rating = -1;
+                            quote.INSTANA_HEADER = INSTANA_HEADER;
                             res.render('home', quote);
                         }
                     );
@@ -364,6 +390,7 @@ app.get('/author/:id', function (req, res) {
                     utils.log("Author bio received.  Author id: " + id, requestToken);
                     var buffer = Buffer.concat(rawData).toString();
                     var bio = JSON.parse(buffer);
+                    bio.INSTANA_HEADER = INSTANA_HEADER;
                     res.render('author', bio);
                 } else {
                     var quote = {
@@ -536,6 +563,7 @@ app.get('/order/:id',
         order.zip = faker.address.zipCodeByState(order.state);
 
         setTimeout(()=>{
+            order.INSTANA_HEADER = INSTANA_HEADER;
             res.render('order',order);
         },delay);
     }
