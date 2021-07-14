@@ -1,3 +1,4 @@
+require('dotenv').config();
 if (process.env.ENABLE_INSTANA == "true") {
     require('@instana/collector')();
 }

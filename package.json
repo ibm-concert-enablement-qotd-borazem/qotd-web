@@ -14,7 +14,8 @@
 		"faker": "^5.2.0",
 		"parse-url": "^5.0.2",
 		"prom-client": "^13.1.0",
-		"express-prometheus-middleware": "^1.2.0"
+		"express-prometheus-middleware": "^1.2.0",
+        "dotenv":"^10.0.0"
 	},
 	"repository": {}
 }
