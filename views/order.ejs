@@ -113,7 +113,7 @@
                 data: JSON.stringify(order), 
                 success: confirmOrder,
                 error: function(errMsg) {
-                    alert(errMsg);
+                    alert(JSON.stringify(errMsg,null,4));
                 }
             });
 
