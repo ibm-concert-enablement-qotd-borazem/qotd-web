@@ -1,6 +1,6 @@
 require('dotenv').config();
 if (process.env.ENABLE_INSTANA == "true") {
-    require('@instana/collector')();
+    require('@instana/collector')({autoProfile: true});
 }
 
 // Instana web app token
@@ -41,7 +41,7 @@ QUOTE_SVC = process.env.QUOTE_SVC;
 AUTHOR_SVC = process.env.AUTHOR_SVC;
 RATING_SVC = process.env.RATING_SVC;
 PDF_SVC = process.env.PDF_SVC;
-ORDER_SVC = process.env.ORDER_SVC;
+ENGRAVING_SVC = process.env.ENGRAVING_SVC;
 
 app = express();
 app.set('views', __dirname + '/views');
@@ -281,7 +281,7 @@ app.get('/', function (req, res) {
                 }
                 addRating(quote, requestToken)
                 .then((quote) => {
-                    if( typeof ORDER_SVC != 'undefined' && ORDER_SVC != "" ) {
+                    if( typeof ENGRAVING_SVC != 'undefined' && ENGRAVING_SVC != "" ) {
                         quote.enableOrdering = true;
                     }
                     quote.INSTANA_HEADER = INSTANA_HEADER;
@@ -329,7 +329,7 @@ app.get('/random', function (req, res) {
                 }
                 addRating(quote, requestToken)
                     .then((quote) => {
-                        if( typeof ORDER_SVC != 'undefined' && ORDER_SVC != "" ) {
+                        if( typeof ENGRAVING_SVC != 'undefined' && ENGRAVING_SVC != "" ) {
                             quote.enableOrdering = true;
                         }
                         quote.INSTANA_HEADER = INSTANA_HEADER;
@@ -611,7 +611,7 @@ app.post('/order/:id',
         order.author = quote.author;
         var payload = JSON.stringify(order);
 
-        var parsedUrl = parseUrl(ORDER_SVC);
+        var parsedUrl = parseUrl(ENGRAVING_SVC);
         var hostname = parsedUrl.resource;
         var port = 80;
         if (parsedUrl.port != null) port = parsedUrl.port;  
@@ -694,4 +694,29 @@ const controler = require('./serviceController.js');
 // require these AFTER we have defined the serviceController express object
 const utils = require('./utils.js');
 const metrics = require('./metrics.js');
+
+
+
+//----------------------------------------------------------------------------------------------
+// Initialize default loggers
+
+const logger=require('./logger');
+
+utils.logLocal("Initializing loggers");
+
+try{
+    var loggerDefs = fs.readdirSync('./loggers');
+    for( loggerDef of loggerDefs ) {
+        var data = fs.readFileSync('./loggers/'+loggerDef);
+        var def = JSON.parse(data);
+        logger.addLogger(def);
+    }
+} catch( error ) {
+    if( error.code == 'ENOENT' ) {
+        utils.log('No default loggers');
+    } else {
+        utils.log(error.message);
+    }
+}
+
 

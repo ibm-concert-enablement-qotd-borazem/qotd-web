@@ -10,7 +10,7 @@ serviceController.post('/logger',
     function (req, res) {
         var logTemplate = req.body;
 
-        if( typeof logTemplate.repeat == 'undefined' ) {
+        if (typeof logTemplate.repeat == 'undefined') {
             // one time log
             var log = genLog(logTemplate);
             utils.log(log);
@@ -26,10 +26,10 @@ serviceController.get('/logger',
         var summary = [];
         var loggers = getActiveLoggers();
         var keys = Object.keys(loggers);
-        for(var i=0; i<keys.length; i++){
+        for (var i = 0; i < keys.length; i++) {
             var key = keys[i];
             var er = loggers[key];
-            summary.push( { "id": er.id, "name": er.name });
+            summary.push({ "id": er.id, "name": er.name });
         }
         res.json(summary);
     }
@@ -40,7 +40,7 @@ serviceController.get('/logger/:id',
     function (req, res) {
         var id = req.params.id;
         var loggers = getActiveLoggers();
-        if( typeof loggers[id] == 'undefined' ){
+        if (typeof loggers[id] == 'undefined') {
             res.status(404).send(`Logger ${id} not found.`);
         } else {
             res.json(loggers[id]);
@@ -53,7 +53,7 @@ serviceController.delete('/logger/:id',
         var id = req.params.id;
         var loggers = getActiveLoggers();
         var log = loggers[id];
-        if( typeof log == 'undefined' || log == null ){
+        if (typeof log == 'undefined' || log == null) {
             res.status(404).send("Not found");
         } else {
             removeLogger(log.id);
@@ -66,7 +66,7 @@ serviceController.delete('/logger/:id',
 serviceController.delete('/logger',
     function (req, res) {
         resetToFactorySettings();
-        utils.logLocal( "DELETE all logs"  ); 
+        utils.logLocal("DELETE all logs");
         res.status(200).send("OK");
     }
 );
@@ -82,13 +82,23 @@ function genValue(field) {
             var options = field.options;
             return utils.pick(options);
         case 'normalInt':
-            return utils.genNormalInt(field.mean,field.stdev,field.min, field.max);
+            return utils.genNormalInt(field.mean, field.stdev, field.min, field.max);
         case 'normalFloat':
-            return utils.genNormal(field.mean,field.stdev,field.min, field.max);
+            var val = utils.genNormal(field.mean, field.stdev, field.min, field.max);
+            if (typeof field.toFixed == 'undefined') {
+                return val;
+            } else {
+                return val.toFixed(field.toFixed);
+            }
         case 'randomInt':
             return utils.intBetween(field.min, field.max);
         case 'randomFloat':
-            return utils.floatBetween(field.min, field.max);
+            var val = utils.floatBetween(field.min, field.max);
+            if (typeof field.toFixed == 'undefined') {
+                return val;
+            } else {
+                return val.toFixed(field.toFixed);
+            }
         case 'ip':
             return faker.internet.ip();
         case 'email':
@@ -133,8 +143,8 @@ function replaceAll(key, value, string) {
 var activeLoggers = {};
 var timers = {};
 
-function stopAll(){
-    for( const loggerId in activeLoggers) {
+function stopAll() {
+    for (const loggerId in activeLoggers) {
         activeLoggers[loggerId].isRunning = false;
         clearTimeout(timers[loggerId]);
     }
@@ -142,7 +152,7 @@ function stopAll(){
 }
 exports.stopAll = stopAll;
 
-function getActiveLoggers(){
+function getActiveLoggers() {
     return activeLoggers;
 }
 exports.getActiveLoggers = getActiveLoggers;
@@ -155,12 +165,12 @@ exports.addLogger = addLogger;
 
 function runLogger(loggerId) {
     var logger = activeLoggers[loggerId];
-    if( logger ) {
+    if (logger) {
         var logEntry = genLog(logger);
         utils.log(logEntry);
         var repeat = logger.repeat;
-        var time = utils.genNormalInt(repeat.mean,repeat.stdev,repeat.min,repeat.max);
-        timers[logger.id] = setTimeout( runLogger, time, loggerId);    
+        var time = utils.genNormalInt(repeat.mean, repeat.stdev, repeat.min, repeat.max);
+        timers[logger.id] = setTimeout(runLogger, time, loggerId);
     }
 }
 
@@ -181,13 +191,13 @@ function genLog(logger) {
         var value = genValue(field);
         template = replaceAll(fieldName, value, template);
     }
-    return template;    
+    return template;
 }
 exports.genLog = genLog;
 
-function resetToFactorySettings(){
+function resetToFactorySettings() {
     var keys = Object.keys(activeLoggers);
-    for(var i=0; i<keys.length; i++){
+    for (var i = 0; i < keys.length; i++) {
         var key = keys[i];
         var logger = activeLoggers[key];
         removeLogger(logger.id);

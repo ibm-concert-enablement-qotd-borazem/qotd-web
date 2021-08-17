@@ -45,6 +45,14 @@ serviceController.post('/app', function(req,res){
             if( appService.listening ) stopService();
             break;
         }
+        case 'sick': {
+            _liveness.healthy = false;
+            break;
+        }
+        case 'heal': {
+            _liveness.healthy = true;
+            break;
+        }
     }
     res.send('OK');
 });
