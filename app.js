@@ -31,6 +31,7 @@ const moment = require('moment');
 const parseUrl = require("parse-url");
 const promMid = require('express-prometheus-middleware');
 const faker = require('faker');
+const requestIp = require('request-ip');
 
 USE_REQ_TOKEN = true;
 if (typeof process.env.USE_REQ_TOKEN != 'undefined') {
@@ -53,6 +54,7 @@ app.enable('trust proxy');
 app.use(promMid());
 app.use(express.static(__dirname + '/public'));
 app.use(express.json());
+app.use(requestIp.mw());
 
 //----------------------------------------------------------------------------------------------
 // Health
@@ -665,11 +667,11 @@ app.post('/order/:id',
 
 app.get('/version',
     function (req, res) {
-        console.log('/version');
-        res.send(`${appName} v${appVersion}, build: ${buildInfo}.`);
+        utils.logLocal('/version');
+        var ip = req.clientIp;
+        res.send(`${appName} v${appVersion}, build: ${buildInfo}.  Your IP: ${ip}`);
     }
 );
-
 
 const package = require('./package.json');
 const appName = package.name;
