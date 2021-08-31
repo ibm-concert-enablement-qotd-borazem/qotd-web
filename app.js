@@ -59,8 +59,11 @@ app.use(requestIp.mw());
 //----------------------------------------------------------------------------------------------
 // Health
 
+const controller = require('./serviceController.js');
+
+
 app.get('/health', function(req,res){
-	if( controler.isHealthy() ) {
+	if( controller.isHealthy() ) {
 		res.status(200).send("Felling good, thank you.");
 	} else {
 		res.status(500).send("Not feeling too good, I am afraid.");
@@ -214,14 +217,6 @@ function getRandomQuote(requestToken) {
         utils.log(`Rejecting get random quote. Error: ${error}`, requestToken);
     });
 }
-
-
-DOUBLE_RATING = false;
-
-app.get('/double-rating', function(req,res){
-    DOUBLE_RATING = !DOUBLE_RATING;
-    res.send("DOUBLE_RATING="+DOUBLE_RATING);
-});
 
 function callRating(quote,requestToken){
     // call rating for no good reason
@@ -691,34 +686,12 @@ serviceController.set('port', 8080)
 serviceController.enable('trust proxy');
 serviceController.use(express.json());
 
-const controler = require('./serviceController.js');
 
 // require these AFTER we have defined the serviceController express object
 const utils = require('./utils.js');
 const metrics = require('./metrics.js');
+const logger = require('./logger');
 
-
-
-//----------------------------------------------------------------------------------------------
-// Initialize default loggers
-
-const logger=require('./logger');
-
-utils.logLocal("Initializing loggers");
-
-try{
-    var loggerDefs = fs.readdirSync('./loggers');
-    for( loggerDef of loggerDefs ) {
-        var data = fs.readFileSync('./loggers/'+loggerDef);
-        var def = JSON.parse(data);
-        logger.addLogger(def);
-    }
-} catch( error ) {
-    if( error.code == 'ENOENT' ) {
-        utils.log('No default loggers');
-    } else {
-        utils.log(error.message);
-    }
-}
+logger.intializeLoggers();
 
 

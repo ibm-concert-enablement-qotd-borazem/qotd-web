@@ -1,7 +1,7 @@
 const faker = require('faker');
 const moment = require('moment');
 const utils = require('./utils.js');
-
+const fs = require('fs');
 
 //----------------------------------------------------------------------------------------------
 // endpoint definitions
@@ -202,6 +202,30 @@ function resetToFactorySettings() {
         var logger = activeLoggers[key];
         removeLogger(logger.id);
     }
+    intializeLoggers();
 }
 exports.resetToFactorySettings = resetToFactorySettings;
+
+function intializeLoggers(){
+    utils.logLocal("Initializing loggers");
+    try {
+        var loggerDefs = fs.readdirSync('./loggers');
+        for (loggerDef of loggerDefs) {
+            if( loggerDef.endsWith('.json') ) {
+                var data = fs.readFileSync('./loggers/' + loggerDef);
+                var def = JSON.parse(data);
+                addLogger(def);
+            }
+        }
+    } catch (error) {
+        if (error.code == 'ENOENT') {
+            utils.logLocal('No default loggers');
+        } else {
+            utils.logLocal(error.message);
+        }
+    }
+}
+exports.intializeLoggers = intializeLoggers;
+
+
 
