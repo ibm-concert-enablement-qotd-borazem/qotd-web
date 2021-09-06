@@ -124,9 +124,6 @@ function addRating(quote, requestToken) {
         })
         .end();
     })
-    // .catch((error) => {
-    //     utils.log(`Rejecting addRating. ${error}`, requestToken);
-    // });
 }
 
 function getDailyQuote(requestToken) {
@@ -662,7 +659,7 @@ app.post('/order/:id',
 
 app.get('/version',
     function (req, res) {
-        utils.logLocal('/version');
+        utils.log('/version');
         var ip = req.clientIp;
         res.send(`${appName} v${appVersion}, build: ${buildInfo}.  Your IP: ${ip}`);
     }
