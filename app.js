@@ -59,9 +59,6 @@ app.use(requestIp.mw());
 //----------------------------------------------------------------------------------------------
 // Health
 
-const controller = require('./serviceController.js');
-
-
 app.get('/health', function(req,res){
 	if( controller.isHealthy() ) {
 		res.status(200).send("Felling good, thank you.");
@@ -117,6 +114,9 @@ function addRating(quote, requestToken) {
                     reject(ratingRes.statusCode);
                 }
             });
+            ratingRes.on('error', error => {
+                utils.log("Call to rating service failed Error: " + error, requestToken);
+            });
         })
         .on('error', error => {
             utils.log('Rejecting rating for quote. ' + error, requestToken);
@@ -158,6 +158,9 @@ function getDailyQuote(requestToken) {
                 } else {
                     reject(quoteRes.statusCode);
                 }
+            });
+            quoteRes.on('error', error => {
+                utils.log("Call to quote service failed Error: " + error, requestToken);
             });
         })
         .on('error', error => {
@@ -202,7 +205,9 @@ function getRandomQuote(requestToken) {
                     reject(quoteRes.statusCode);
                 }
             });
-
+            quoteRes.on('error', error => {
+                utils.log("Call to quote service failed Error: " + error, requestToken);
+            });
         })
         .on('error', error => {
             reject(error);
@@ -245,6 +250,9 @@ function callRating(quote,requestToken){
                 utils.log('Rejecting rating for quote.  Status: ' + ratingRes.statusCode, requestToken);
             }
         });
+        ratingRes.on('error', error => {
+            utils.log("Call to rating service failed Error: " + error, requestToken);
+        });
     })
     .on('error', error => {
         utils.log('Rejecting rating for quote. ' + error, requestToken);
@@ -270,9 +278,6 @@ app.get('/', function (req, res) {
                 quote.today = now.format("dddd, MMMM Do YYYY");
                 quote.title = "Quote of the Day";
 
-                if( DOUBLE_RATING ) {
-                    callRating(quote,requestToken);
-                }
                 addRating(quote, requestToken)
                 .then((quote) => {
                     if( typeof ENGRAVING_SVC != 'undefined' && ENGRAVING_SVC != "" ) {
@@ -318,9 +323,6 @@ app.get('/random', function (req, res) {
             .then((quote) => {
                 quote.today = "";
                 quote.title = "Random Quote";
-                if( DOUBLE_RATING ) {
-                    callRating(quote,requestToken);
-                }
                 addRating(quote, requestToken)
                     .then((quote) => {
                         if( typeof ENGRAVING_SVC != 'undefined' && ENGRAVING_SVC != "" ) {
@@ -399,6 +401,9 @@ app.get('/author/:id', function (req, res) {
                     res.status(500).send("Problem getting author bio.");
                 }
             });
+            bioReq.on('error', error => {
+                utils.log("Call to author service failed Error: " + error, requestToken);
+            });
         })
         .on('error', error => {
             res.status(500).send("Problem getting author bio.");
@@ -463,6 +468,9 @@ app.get('/images/:id',
                         res.end(Buffer.from(defImage, 'binary'));
                     }
                 });
+                imgRes.on('error', error => {
+                    utils.log("Call to image service failed Error: " + error, requestToken);
+                });
             })
                 .on('error', error => {
                     utils.log("Problem getting image " + id + " Error: " + error, requestToken);
@@ -501,11 +509,9 @@ app.get('/pdf/:id',
 
             http.request(options, function (pdfRes) {
                 var rawData = [];
-
                 pdfRes.on('data', (chunk) => {
                     rawData.push(chunk);
                 });
-
                 pdfRes.on('end', () => {
                     utils.logLocal(`Image svc response: ${pdfRes.statusCode}`);
 
@@ -524,12 +530,15 @@ app.get('/pdf/:id',
                         res.status(404).send("PDF " + id + " not found");
                     }
                 });
+                pdfRes.on('error', error => {
+                    utils.log("Call to pdf service failed Error: " + error, requestToken);
+                });
             })
-                .on('error', error => {
-                    utils.log("Attempt to get PDF " + id + " unsuccessful. Error: " + error, requestToken);
-                    res.status(500).send("PDF " + id + " Error: " + error);
-                })
-                .end();
+            .on('error', error => {
+                utils.log("Attempt to get PDF " + id + " unsuccessful. Error: " + error, requestToken);
+                res.status(500).send("PDF " + id + " Error: " + error);
+            })
+            .end();
 
         }, delay);
     }
@@ -639,6 +648,9 @@ app.post('/order/:id',
                         res.status(orderRes.statusCode).send("Problem with Order service.");
                     }
                 });
+                orderRes.on('error', error => {
+                    utils.log("Call to order/engraving service failed Error: " + error, requestToken);
+                });
             });
     
             orderReq.on('error', error => {
@@ -688,6 +700,7 @@ serviceController.use(express.json());
 const utils = require('./utils.js');
 const metrics = require('./metrics.js');
 const logger = require('./logger');
+const controller = require('./serviceController.js');
 
 logger.intializeLoggers();
 
