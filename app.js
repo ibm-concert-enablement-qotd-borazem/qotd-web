@@ -1,6 +1,6 @@
 require('dotenv').config();
 if (process.env.ENABLE_INSTANA == "true") {
-    require('@instana/collector')({autoProfile: true});
+    require('@instana/collector')({ autoProfile: true });
 }
 
 // Instana web app token
@@ -9,18 +9,18 @@ const INSTANA_ENUM_MIN_JS_URL = process.env.INSTANA_ENUM_MIN_JS_URL;
 const INSTANA_KEY = process.env.INSTANA_KEY;
 var INSTANA_HEADER = "";
 
-if( typeof INSTANA_REPORTING_URL != 'undefined' && INSTANA_REPORTING_URL != "" 
-    && typeof INSTANA_ENUM_MIN_JS_URL != 'undefined' && INSTANA_ENUM_MIN_JS_URL != "" 
-    && typeof INSTANA_KEY != 'undefined' && INSTANA_KEY != "" )  {
-    
-    INSTANA_HEADER = 
-        `<script>\n` + 
-        `  (function(s,t,a,n){s[t]||(s[t]=a,n=s[a]=function(){n.q.push(arguments)},\n` + 
-        `  n.q=[],n.v=2,n.l=1*new Date)})(window,"InstanaEumObject","ineum");\n` + 
-        `  ineum('reportingUrl', '${INSTANA_REPORTING_URL}');\n` + 
-        `  ineum('key', '${INSTANA_KEY}');\n` + 
-        `  ineum('trackSessions');\n` + 
-        `</script>\n` + 
+if (typeof INSTANA_REPORTING_URL != 'undefined' && INSTANA_REPORTING_URL != ""
+    && typeof INSTANA_ENUM_MIN_JS_URL != 'undefined' && INSTANA_ENUM_MIN_JS_URL != ""
+    && typeof INSTANA_KEY != 'undefined' && INSTANA_KEY != "") {
+
+    INSTANA_HEADER =
+        `<script>\n` +
+        `  (function(s,t,a,n){s[t]||(s[t]=a,n=s[a]=function(){n.q.push(arguments)},\n` +
+        `  n.q=[],n.v=2,n.l=1*new Date)})(window,"InstanaEumObject","ineum");\n` +
+        `  ineum('reportingUrl', '${INSTANA_REPORTING_URL}');\n` +
+        `  ineum('key', '${INSTANA_KEY}');\n` +
+        `  ineum('trackSessions');\n` +
+        `</script>\n` +
         `<script defer crossorigin="anonymous" src="${INSTANA_ENUM_MIN_JS_URL}"></script>\n`;
 }
 
@@ -59,12 +59,12 @@ app.use(requestIp.mw());
 //----------------------------------------------------------------------------------------------
 // Health
 
-app.get('/health', function(req,res){
-	if( controller.isHealthy() ) {
-		res.status(200).send("Felling good, thank you.");
-	} else {
-		res.status(500).send("Not feeling too good, I am afraid.");
-	}
+app.get('/health', function (req, res) {
+    if (controller.isHealthy()) {
+        res.status(200).send("Felling good, thank you.");
+    } else {
+        res.status(500).send("Not feeling too good, I am afraid.");
+    }
 });
 
 
@@ -86,7 +86,7 @@ function addRating(quote, requestToken) {
         var parsedUrl = parseUrl(RATING_SVC);
         var hostname = parsedUrl.resource;
         var port = 80;
-        if (parsedUrl.port != null) port = parsedUrl.port;    
+        if (parsedUrl.port != null) port = parsedUrl.port;
         const options = {
             "headers": { "Accept": "application/json" },
             "method": 'GET',
@@ -95,34 +95,31 @@ function addRating(quote, requestToken) {
             "path": '/ratings/' + quote.id + '?requestToken=' + requestToken
         }
 
-        http.request(options, function (ratingRes) {
+        http.request(options, function (response) {
             var rawData = [];
-            ratingRes.on('data', (chunk) => {
+            response.on('data', (chunk) => {
                 rawData.push(chunk);
             });
-            ratingRes.on('end', () => {
-                utils.logLocal(`Rating svc response http://${options.hostname}:${options.port}${options.path}: ${ratingRes.statusCode}`);
+            response.on('end', () => {
+                utils.logLocal(`Rating svc response http://${options.hostname}:${options.port}${options.path}: ${response.statusCode}`);
 
-                if (ratingRes.statusCode == 200) {
+                if (response.statusCode == 200) {
                     utils.log('Got rating for quote: ' + quote.id, requestToken);
                     var buffer = Buffer.concat(rawData).toString();
                     var rating = JSON.parse(buffer);
                     quote.rating = rating.rating;
                     resolve(quote);
                 } else {
-                    utils.log('Rejecting rating for quote.  Status: ' + ratingRes.statusCode, requestToken);
-                    reject(ratingRes.statusCode);
+                    utils.log('Rejecting rating for quote.  Status: ' + response.statusCode, requestToken);
+                    reject(response.statusCode);
                 }
             });
-            ratingRes.on('error', error => {
-                utils.log("Call to rating service failed Error: " + error, requestToken);
-            });
         })
-        .on('error', error => {
-            utils.log('Rejecting rating for quote. ' + error, requestToken);
-            reject(error);
-        })
-        .end();
+            .on('error', error => {
+                utils.log(`Error on http request: ${error}`, requestToken);
+                reject(error);
+            })
+            .end();
     })
 }
 
@@ -133,7 +130,7 @@ function getDailyQuote(requestToken) {
         var parsedUrl = parseUrl(QUOTE_SVC);
         var hostname = parsedUrl.resource;
         var port = 80;
-        if (parsedUrl.port != null) port = parsedUrl.port;  
+        if (parsedUrl.port != null) port = parsedUrl.port;
         const options = {
             "headers": { "Accept": "application/json" },
             "method": 'GET',
@@ -142,35 +139,30 @@ function getDailyQuote(requestToken) {
             "path": '/daily?requestToken=' + requestToken
         }
 
-        http.request(options, function (quoteRes) {
+        http.request(options, function (response) {
             var rawData = [];
-            quoteRes.on('data', (chunk) => {
+            response.on('data', (chunk) => {
                 rawData.push(chunk);
             });
-            quoteRes.on('end', () => {
-                utils.logLocal(`Quote svc response http://${options.hostname}:${options.port}${options.path}: ${quoteRes.statusCode}`);
+            response.on('end', () => {
+                utils.logLocal(`Quote svc response http://${options.hostname}:${options.port}${options.path}: ${response.statusCode}`);
 
-                if (quoteRes.statusCode == 200) {
+                if (response.statusCode == 200) {
                     utils.log('Obtained daily quote.', requestToken);
                     var buffer = Buffer.concat(rawData).toString();
                     var quote = JSON.parse(buffer);
                     resolve(quote);
                 } else {
-                    reject(quoteRes.statusCode);
+                    reject(response.statusCode);
                 }
             });
-            quoteRes.on('error', error => {
-                utils.log("Call to quote service failed Error: " + error, requestToken);
-            });
         })
-        .on('error', error => {
-            reject(error);
-        })
-        .end();
+            .on('error', error => {
+                utils.log(`Error on http request: ${error}`, requestToken);
+                reject(error);
+            })
+            .end();
     })
-    .catch((error) => {
-        utils.log(`Rejecting get daily quote. Error: ${error}`, requestToken);
-    });
 }
 
 function getRandomQuote(requestToken) {
@@ -179,7 +171,7 @@ function getRandomQuote(requestToken) {
         var parsedUrl = parseUrl(QUOTE_SVC);
         var hostname = parsedUrl.resource;
         var port = 80;
-        if (parsedUrl.port != null) port = parsedUrl.port;  
+        if (parsedUrl.port != null) port = parsedUrl.port;
         const options = {
             "headers": { "Accept": "application/json" },
             "method": 'GET',
@@ -188,76 +180,31 @@ function getRandomQuote(requestToken) {
             "path": '/random?requestToken=' + requestToken
         }
 
-        http.request(options, function (quoteRes) {
+        http.request(options, function (response) {
             var rawData = [];
-            quoteRes.on('data', (chunk) => {
+            response.on('data', (chunk) => {
                 rawData.push(chunk);
             });
-            quoteRes.on('end', () => {
-                utils.logLocal(`Quote svc response: ${quoteRes.statusCode}`);
+            response.on('end', () => {
+                utils.logLocal(`Quote svc response: ${response.statusCode}`);
 
-                if (quoteRes.statusCode == 200) {
+                if (response.statusCode == 200) {
                     utils.log('Obtained random quote.', requestToken);
                     var buffer = Buffer.concat(rawData).toString();
                     var rating = JSON.parse(buffer);
                     resolve(rating);
                 } else {
-                    reject(quoteRes.statusCode);
+                    reject(response.statusCode);
                 }
             });
-            quoteRes.on('error', error => {
-                utils.log("Call to quote service failed Error: " + error, requestToken);
-            });
         })
-        .on('error', error => {
-            reject(error);
-        })
-        .end();
+            .on('error', error => {
+                utils.log(`Error on http request: ${error}`, requestToken);
+                reject(error);
+            })
+            .end();
 
     })
-    .catch((error) => {
-        utils.log(`Rejecting get random quote. Error: ${error}`, requestToken);
-    });
-}
-
-function callRating(quote,requestToken){
-    // call rating for no good reason
-    utils.logLocal("Calling Double Rating");
-    utils.log('Getting rating for quote: ' + quote.id, requestToken);
-    var parsedUrl = parseUrl(RATING_SVC);
-    var hostname = parsedUrl.resource;
-    var port = 80;
-    if (parsedUrl.port != null) port = parsedUrl.port;    
-    const options = {
-        "headers": { "Accept": "application/json" },
-        "method": 'GET',
-        "hostname": hostname,
-        "port": port,
-        "path": '/ratings/' + quote.id + '?requestToken=' + requestToken
-    }
-
-    http.request(options, function (ratingRes) {
-        var rawData = [];
-        ratingRes.on('data', (chunk) => {
-            rawData.push(chunk);
-        });
-        ratingRes.on('end', () => {
-            utils.logLocal(`Rating svc response http://${options.hostname}:${options.port}${options.path}: ${ratingRes.statusCode}`);
-
-            if (ratingRes.statusCode == 200) {
-                utils.log('Got rating for quote: ' + quote.id, requestToken);
-            } else {
-                utils.log('Rejecting rating for quote.  Status: ' + ratingRes.statusCode, requestToken);
-            }
-        });
-        ratingRes.on('error', error => {
-            utils.log("Call to rating service failed Error: " + error, requestToken);
-        });
-    })
-    .on('error', error => {
-        utils.log('Rejecting rating for quote. ' + error, requestToken);
-    })
-    .end();
 }
 
 app.get('/', function (req, res) {
@@ -274,27 +221,27 @@ app.get('/', function (req, res) {
         getDailyQuote(requestToken)
             .then((quote) => {
                 var now = new moment();
-                
+
                 quote.today = now.format("dddd, MMMM Do YYYY");
                 quote.title = "Quote of the Day";
 
                 addRating(quote, requestToken)
-                .then((quote) => {
-                    if( typeof ENGRAVING_SVC != 'undefined' && ENGRAVING_SVC != "" ) {
-                        quote.enableOrdering = true;
-                    }
-                    quote.INSTANA_HEADER = INSTANA_HEADER;
-                    res.render('home', quote);
-                })
-                .catch(
-                    (err) => {
-                        utils.log(" Problem getting rating. Err: " + err, requestToken);
-                        // send th epage anyway but with a -1 rating
-                        quote.rating = -1;
+                    .then((quote) => {
+                        if (typeof ENGRAVING_SVC != 'undefined' && ENGRAVING_SVC != "") {
+                            quote.enableOrdering = true;
+                        }
                         quote.INSTANA_HEADER = INSTANA_HEADER;
                         res.render('home', quote);
-                    }
-                );
+                    })
+                    .catch(
+                        (err) => {
+                            utils.log(" Problem getting rating. Err: " + err, requestToken);
+                            // send th epage anyway but with a -1 rating
+                            quote.rating = -1;
+                            quote.INSTANA_HEADER = INSTANA_HEADER;
+                            res.render('home', quote);
+                        }
+                    );
 
             })
             .catch(
@@ -325,7 +272,7 @@ app.get('/random', function (req, res) {
                 quote.title = "Random Quote";
                 addRating(quote, requestToken)
                     .then((quote) => {
-                        if( typeof ENGRAVING_SVC != 'undefined' && ENGRAVING_SVC != "" ) {
+                        if (typeof ENGRAVING_SVC != 'undefined' && ENGRAVING_SVC != "") {
                             quote.enableOrdering = true;
                         }
                         quote.INSTANA_HEADER = INSTANA_HEADER;
@@ -365,7 +312,7 @@ app.get('/author/:id', function (req, res) {
     var parsedUrl = parseUrl(AUTHOR_SVC);
     var hostname = parsedUrl.resource;
     var port = 80;
-    if (parsedUrl.port != null) port = parsedUrl.port;  
+    if (parsedUrl.port != null) port = parsedUrl.port;
     setTimeout(function () {
         const options = {
             "headers": { "Accept": "application/json" },
@@ -375,15 +322,15 @@ app.get('/author/:id', function (req, res) {
             "path": '/authors/' + id + '?requestToken=' + requestToken
         }
 
-        http.request(options, function (bioReq) {
+        http.request(options, function (response) {
             var rawData = [];
-            bioReq.on('data', (chunk) => {
+            response.on('data', (chunk) => {
                 rawData.push(chunk);
             });
-            bioReq.on('end', () => {
-                utils.logLocal(`Quote svc response: ${bioReq.statusCode}`);
+            response.on('end', () => {
+                utils.logLocal(`Quote svc response: ${response.statusCode}`);
 
-                if (bioReq.statusCode == 200) {
+                if (response.statusCode == 200) {
                     utils.log("Author bio received.  Author id: " + id, requestToken);
                     var buffer = Buffer.concat(rawData).toString();
                     var bio = JSON.parse(buffer);
@@ -393,23 +340,20 @@ app.get('/author/:id', function (req, res) {
                     var quote = {
                         "title": "QotD Error",
                         "today": "",
-                        "quote": bioReq.statusCode, // todo: get error msg
+                        "quote": response.statusCode, // todo: get error msg
                         "author": "",
                         "genre": ""
                     };
-                    utils.log("Problem getting author bio. Service Status Code: " + bioReq.statusCode, requestToken);
+                    utils.log("Problem getting author bio. Service Status Code: " + response.statusCode, requestToken);
                     res.status(500).send("Problem getting author bio.");
                 }
             });
-            bioReq.on('error', error => {
-                utils.log("Call to author service failed Error: " + error, requestToken);
-            });
         })
-        .on('error', error => {
-            res.status(500).send("Problem getting author bio.");
-            utils.log("Problem getting author bio.  " + error, requestToken);
-        })
-        .end();
+            .on('error', error => {
+                res.status(500).send("Problem getting author bio.");
+                utils.log("Problem getting author bio.  " + error, requestToken);
+            })
+            .end();
 
     }, delay);
 });
@@ -428,7 +372,7 @@ app.get('/images/:id',
         var parsedUrl = parseUrl(AUTHOR_SVC);
         var hostname = parsedUrl.resource;
         var port = 80;
-        if (parsedUrl.port != null) port = parsedUrl.port;  
+        if (parsedUrl.port != null) port = parsedUrl.port;
         setTimeout(function () {
             const options = {
                 "headers": { "Accept": "image/jpeg" },
@@ -438,17 +382,15 @@ app.get('/images/:id',
                 "path": '/images/' + id + '?requestToken=' + requestToken
             }
 
-            http.request(options, function (imgRes) {
+            http.request(options, function (response) {
                 var rawData = [];
-
-                imgRes.on('data', (chunk) => {
+                response.on('data', (chunk) => {
                     rawData.push(chunk);
                 });
+                response.on('end', () => {
+                    utils.logLocal(`Image svc response: ${response.statusCode}`);
 
-                imgRes.on('end', () => {
-                    utils.logLocal(`Image svc response: ${imgRes.statusCode}`);
-
-                    if (imgRes.statusCode == 200) {
+                    if (response.statusCode == 200) {
                         var buffer = Buffer.concat(rawData);
                         res.writeHead(200, {
                             'Content-Type': 'image/jpeg',
@@ -468,17 +410,12 @@ app.get('/images/:id',
                         res.end(Buffer.from(defImage, 'binary'));
                     }
                 });
-                imgRes.on('error', error => {
-                    utils.log("Call to image service failed Error: " + error, requestToken);
-                });
             })
                 .on('error', error => {
                     utils.log("Problem getting image " + id + " Error: " + error, requestToken);
                     res.status(500).send("Image " + id + " not found");
                 })
                 .end();
-
-
         }, delay);
     }
 );
@@ -497,7 +434,7 @@ app.get('/pdf/:id',
         var parsedUrl = parseUrl(PDF_SVC);
         var hostname = parsedUrl.resource;
         var port = 80;
-        if (parsedUrl.port != null) port = parsedUrl.port;  
+        if (parsedUrl.port != null) port = parsedUrl.port;
         setTimeout(function () {
             const options = {
                 "headers": { "Accept": "application/pdf" },
@@ -507,15 +444,15 @@ app.get('/pdf/:id',
                 "path": '/pdf/' + id + '?requestToken=' + requestToken
             }
 
-            http.request(options, function (pdfRes) {
+            http.request(options, function (response) {
                 var rawData = [];
-                pdfRes.on('data', (chunk) => {
+                response.on('data', (chunk) => {
                     rawData.push(chunk);
                 });
-                pdfRes.on('end', () => {
-                    utils.logLocal(`Image svc response: ${pdfRes.statusCode}`);
+                response.on('end', () => {
+                    utils.logLocal(`Image svc response: ${response.statusCode}`);
 
-                    if (pdfRes.statusCode == 200) {
+                    if (response.statusCode == 200) {
                         utils.log("PDF received.", requestToken);
                         var buffer = Buffer.concat(rawData);
                         res.writeHead(200, {
@@ -530,15 +467,12 @@ app.get('/pdf/:id',
                         res.status(404).send("PDF " + id + " not found");
                     }
                 });
-                pdfRes.on('error', error => {
-                    utils.log("Call to pdf service failed Error: " + error, requestToken);
-                });
             })
-            .on('error', error => {
-                utils.log("Attempt to get PDF " + id + " unsuccessful. Error: " + error, requestToken);
-                res.status(500).send("PDF " + id + " Error: " + error);
-            })
-            .end();
+                .on('error', error => {
+                    utils.log("Attempt to get PDF " + id + " unsuccessful. Error: " + error, requestToken);
+                    res.status(500).send("PDF " + id + " Error: " + error);
+                })
+                .end();
 
         }, delay);
     }
@@ -566,18 +500,18 @@ app.get('/order/:id',
         }
         order.zip = faker.address.zipCodeByState(order.state);
 
-        setTimeout(()=>{
+        setTimeout(() => {
             order.INSTANA_HEADER = INSTANA_HEADER;
-            res.render('order',order);
-        },delay);
+            res.render('order', order);
+        }, delay);
     }
 );
 
-async function getQuote(id,requestToken){
+async function getQuote(id, requestToken) {
     var parsedUrl = parseUrl(QUOTE_SVC);
     var hostname = parsedUrl.resource;
     var port = 80;
-    if (parsedUrl.port != null) port = parsedUrl.port;  
+    if (parsedUrl.port != null) port = parsedUrl.port;
     const options = {
         "headers": { "Accept": "application/json" },
         "method": 'GET',
@@ -600,16 +534,16 @@ app.post('/order/:id',
         var order = req.body;
         order.customer = faker.finance.accountName;
 
-        var quote;
-        try{
-            quote = await getQuote(id,requestToken);
-        } catch( error ) {
-            utils.log(error,requestToken);
-            res.status(500).send(error);
-            return;
-        }
-    
-        var quote = await getQuote(id,requestToken);
+        // var quote;
+        // try{
+        //     quote = await getQuote(id,requestToken);
+        // } catch( error ) {
+        //     utils.log(error,requestToken);
+        //     res.status(500).send(error);
+        //     return;
+        // }
+
+        var quote = await getQuote(id, requestToken);
         order.quote = quote.quote;
         order.author = quote.author;
         var payload = JSON.stringify(order);
@@ -617,7 +551,7 @@ app.post('/order/:id',
         var parsedUrl = parseUrl(ENGRAVING_SVC);
         var hostname = parsedUrl.resource;
         var port = 80;
-        if (parsedUrl.port != null) port = parsedUrl.port;  
+        if (parsedUrl.port != null) port = parsedUrl.port;
         var path = parsedUrl.pathname + '/order?requestToken=' + requestToken;
         setTimeout(function () {
             const options = {
@@ -629,30 +563,27 @@ app.post('/order/:id',
                 "path": path
             }
 
-            var orderReq = http.request(options, function (orderRes) {
+            var orderReq = http.request(options, function (response) {
                 utils.logLocal(`\tPOST http://${options.hostname}:${options.port}${options.path}`);
-                utils.logLocal('\t'+payload);
+                utils.logLocal('\t' + payload);
                 var rawData = [];
-                orderRes.on('data', (chunk) => {
+                response.on('data', (chunk) => {
                     rawData.push(chunk);
                 });
-                orderRes.on('end', () => {
+                response.on('end', () => {
                     utils.logLocal(`\tFinished POST http://${options.hostname}:${options.port}${options.path}`);
-    
-                    if (orderRes.statusCode == 200) {
+
+                    if (response.statusCode == 200) {
                         var buffer = Buffer.concat(rawData).toString();
                         utils.logLocal(`\tGot POST respponse http://${options.hostname}:${options.port}${options.path} ${buffer}`);
                         res.status(200).send("Success");
                     } else {
-                        utils.logLocal(`\tGot POST status response http://${options.hostname}:${options.port}${options.path} ${orderRes.statusCode}`);
-                        res.status(orderRes.statusCode).send("Problem with Order service.");
+                        utils.logLocal(`\tGot POST status response http://${options.hostname}:${options.port}${options.path} ${response.statusCode}`);
+                        res.status(response.statusCode).send("Problem with Order service.");
                     }
                 });
-                orderRes.on('error', error => {
-                    utils.log("Call to order/engraving service failed Error: " + error, requestToken);
-                });
             });
-    
+
             orderReq.on('error', error => {
                 utils.logLocal(`\tGot POST Error  http://${options.hostname}:${options.port}${options.path} ${error}`);
                 res.status(500).send(error);
@@ -660,7 +591,7 @@ app.post('/order/:id',
 
             orderReq.write(payload);
             orderReq.end();
-            
+
         }, delay);
     }
 
@@ -703,5 +634,4 @@ const logger = require('./logger');
 const controller = require('./serviceController.js');
 
 logger.intializeLoggers();
-
 
