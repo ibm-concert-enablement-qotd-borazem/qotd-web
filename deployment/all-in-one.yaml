@@ -16,11 +16,20 @@ spec:
       labels:
         app: qotd-web
     spec:
+      volumes:
+        - name: qotd-web-loggers
+          configMap:
+            name: qotd-web-loggers
+            defaultMode: 420
       restartPolicy: Always
       containers:
         - name: qotd-web
           image: registry.gitlab.com/quote-of-the-day/qotd-web:latest
           imagePullPolicy: Always
+          volumeMounts:
+            - name: qotd-web-loggers
+              readOnly: true
+              mountPath: /app/loggers
           ports:
             - name: http
               containerPort: 3000
@@ -123,3 +132,60 @@ spec:
   port:
     targetPort: svc
   wildcardPolicy: None
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: qotd-web-loggers
+  namespace: qotd
+data:
+  incident.json: |
+    {
+        "id": "incident",
+        "name": "Simulated incident record",
+        "template": "Disk status notifier: code=D{{v1}} dstepid={{v2}} vd={{user}}",
+        "fields": {
+            "v1": {
+                "type": "randomInt",
+                "min": 1000,
+                "max": 9999
+            },
+            "v2": {
+                "type": "randomInt",
+                "min": 1000,
+                "max": 9999
+            },
+            "user": {
+                "type": "userName"
+            }
+        },
+        "repeat": {
+            "mean": 13000,
+            "stdev": 200,
+            "min": 11000,
+            "max": 15000
+        }
+    }
+
+  heartbeat.json: |
+    {
+      "id": "heartbeat",
+      "name": "A regular log message indicating the health with a simple status.",
+      "template": "Web pulse status: {{STATUS}}",
+      "fields": {
+          "STATUS": {
+              "type": "pickWeighted",
+              "options": [
+                  { "value": "GOOD", "weight": 8 },
+                  { "value": "POOR", "weight": 2 }
+              ]            
+          }
+      },
+      "repeat": {
+          "mean": 4000,
+          "stdev": 1000,
+          "min": 3000,
+          "max": 5000
+      }
+    }
+
