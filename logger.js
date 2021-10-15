@@ -28,8 +28,8 @@ serviceController.get('/logger',
         var keys = Object.keys(loggers);
         for (var i = 0; i < keys.length; i++) {
             var key = keys[i];
-            var er = loggers[key];
-            summary.push({ "id": er.id, "name": er.name });
+            var logger = loggers[key];
+            summary.push({ "id": logger.id, "name": logger.name });
         }
         res.json(summary);
     }
@@ -61,16 +61,6 @@ serviceController.delete('/logger/:id',
         }
     }
 );
-
-
-serviceController.delete('/logger',
-    function (req, res) {
-        resetToFactorySettings();
-        utils.logLocal("DELETE all logs");
-        res.status(200).send("OK");
-    }
-);
-
 
 function genValue(field) {
     var type = field.type;
@@ -202,13 +192,14 @@ function resetToFactorySettings() {
         var logger = activeLoggers[key];
         removeLogger(logger.id);
     }
-    intializeLoggers();
+    intializeDefaultLoggers();
 }
 exports.resetToFactorySettings = resetToFactorySettings;
 
-function intializeLoggers(){
-    utils.logLocal("Initializing loggers");
+function intializeDefaultLoggers(){
+    utils.logLocal("Initializing default loggers");
     try {
+        activeLoggers = [];
         var loggerDefs = fs.readdirSync('./loggers');
         for (loggerDef of loggerDefs) {
             if( loggerDef.endsWith('.json') ) {
@@ -225,7 +216,7 @@ function intializeLoggers(){
         }
     }
 }
-exports.intializeLoggers = intializeLoggers;
+exports.intializeDefaultLoggers = intializeDefaultLoggers;
 
 
 

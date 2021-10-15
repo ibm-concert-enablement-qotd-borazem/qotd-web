@@ -8,6 +8,9 @@ const factorySettings = require('./data/factory_settings.json');
 
 var apiOptions = JSON.parse(JSON.stringify(factorySettings.api));
 
+// this function computes the delay used to induce latency in all the 
+// application services (not /metrics, liveness probe or any of the 
+// serviceController services)
 function getDelay() {
     var mean = apiOptions.mean;
     var stdev = apiOptions.stdev;
@@ -130,7 +133,7 @@ function allocMemoryBlock(){
     var desiredHogs = memOptions.hogs;
     if( desiredHogs > currentHogs) {
         const arr = []
-        var blockSize = 7000 * 1024 / 8
+        var blockSize = 15000 * 1024 / 8
         arr.length = blockSize;
         for (let i = 0; i < blockSize; i++) {
             arr[i] = i;
@@ -140,7 +143,6 @@ function allocMemoryBlock(){
         utils.logLocal("new hog ["+ len + "]");     
     }
 }
-
 
 serviceController.put('/metric/mem', function (req, res) {
     utils.logLocal("PUT /metric/mem " + JSON.stringify(req.body));
@@ -173,7 +175,7 @@ serviceController.get('/metric/mem', function (req, res) {
 
 var cpuOptions = JSON.parse(JSON.stringify(factorySettings.cpu));
 
-var CPU_HOG_SIZE = 50000;
+var CPU_HOG_SIZE = 100000;
 if( typeof process.env.CPU_HOG_SIZE != 'undefined' ) {
     CPU_HOG_SIZE = parseInt(process.env.CPU_HOG_SIZE);
     if(CPU_HOG_SIZE<1000) CPU_HOG_SIZE = 50000;
@@ -186,7 +188,6 @@ function cpuHogBurst(){
     for( var i=0; i<countTo; i++){
         result = Math.random() * Math.random();
     }
-    // utils.logLocal("oink");
 }
 
 function addCpuHog() {

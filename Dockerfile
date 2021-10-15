@@ -10,7 +10,6 @@ COPY build.txt .
 COPY ./*.js ./
 COPY views ./views
 COPY public ./public
-COPY data ./data
 
 RUN npm install
 

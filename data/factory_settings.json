@@ -1,5 +1,0 @@
-{
-    "api": {"mean": 100, "stdev": 100, "min":10,"max":400},
-    "mem": { "hogs": 0 },
-    "cpu": { "hogs": 0 }
-}

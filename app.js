@@ -633,5 +633,5 @@ const metrics = require('./metrics.js');
 const logger = require('./logger');
 const controller = require('./serviceController.js');
 
-logger.intializeLoggers();
+logger.intializeDefaultLoggers();
 

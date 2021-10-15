@@ -1,5 +1,3 @@
-const http = require('http');
-
 
 var localLogging = false;
 if( typeof process.env.LOCAL_LOGGING != 'undefined' ){
@@ -24,7 +22,7 @@ exports.floatBetween = floatBetween;
 function pick(optionsArray){
     var len = optionsArray.length;
     var i = intBetween(0,len);
-    return optionsArray[i].value;
+    return optionsArray[i];
 }
 
 exports.pick = pick;
@@ -34,7 +32,7 @@ function pickWeighted(options){
     for( const option of options ){
         var weight = option.weight;
         for(var j=0;j<weight;j++){
-            optionsArray.push(option);
+            optionsArray.push(option.value);
         }
     }
     return pick(optionsArray);
@@ -115,44 +113,3 @@ function formatTime(timeInMs) {
     return timeInMs +'ms';
 }
 exports.formatTime = formatTime;
-
-
-function httpRequest(options,payload) {
-    return new Promise((resolve, reject) => {
-        var httpReq = http.request(options, function (res) {
-            logLocal(`\t${options.method} http://${options.hostname}:${options.port}${options.path}`);
-            var rawData = [];
-            res.on('data', (chunk) => {
-                rawData.push(chunk);
-            });
-            res.on('end', () => {
-                logLocal(`\tFinished ${options.method} http://${options.hostname}:${options.port}${options.path}`);
-
-                if (res.statusCode == 200) {
-                    logLocal(`\tGot http://${options.hostname}:${options.port}${options.path}`);
-                    var buffer = Buffer.concat(rawData).toString();
-                    var obj = JSON.parse(buffer);
-                    resolve(obj);
-                } else {
-                    reject(`Failed: ${res.statusCode}`);
-                }
-            });
-        });
-
-        httpReq.on('error', error => {
-            logLocal(`\tError: ${error}`);
-            reject(error);
-        });
-
-        if( typeof payload != 'undefined' && payload.length>0 ) {
-            httpReq.write(payload);
-        }
-
-        httpReq.end();
-    })
-    .catch((error) => {
-        log(`Rejecting ${options.hostname} http://${options.hostname}:${options.port}${options.path}; Error: ${error}`);
-    });
-}
-
-exports.httpRequest = httpRequest;
