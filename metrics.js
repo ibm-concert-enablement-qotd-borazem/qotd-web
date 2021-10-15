@@ -1,6 +1,19 @@
 const utils = require('./utils.js');
 
-const factorySettings = require('./data/factory_settings.json');
+const factorySettings = {
+    "api": {
+        "mean": 100,
+        "stdev": 500,
+        "min": 10,
+        "max": 400
+    },
+    "mem": {
+        "hogs": 0
+    },
+    "cpu": {
+        "hogs": 0
+    }
+};
 
 
 // --------------------------------------------------
