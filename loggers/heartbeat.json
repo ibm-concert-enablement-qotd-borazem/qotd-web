@@ -1,0 +1,20 @@
+{
+    "id": "heartbeat",
+    "name": "A regular log message indicating the health with a simple status.",
+    "template": "Web pulse status: {{STATUS}}",
+    "fields": {
+        "STATUS": {
+            "type": "pickWeighted",
+            "options": [
+                { "value": "GOOD", "weight": 8 },
+                { "value": "POOR", "weight": 2 }
+            ]            
+        }
+    },
+    "repeat": {
+        "mean": 4000,
+        "stdev": 1000,
+        "min": 3000,
+        "max": 5000
+    }
+}

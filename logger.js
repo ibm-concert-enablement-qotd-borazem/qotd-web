@@ -6,6 +6,11 @@ const fs = require('fs');
 //----------------------------------------------------------------------------------------------
 // endpoint definitions
 
+function getLogger(id) {
+    var loggers = getActiveLoggers();
+    return loggers[id];
+}
+
 serviceController.post('/logger',
     function (req, res) {
         var logTemplate = req.body;
@@ -20,6 +25,37 @@ serviceController.post('/logger',
         res.status(200).send("OK");
     }
 );
+
+serviceController.put('/logger',
+    function (req, res) {
+        var loggerData = req.body;
+        var id = loggerData.id;
+        var logger = getLogger(id);
+
+        if( logger == null ) res.status(404).json( { "error": "logger not found "+id });
+
+        removeLogger(id);
+        addLogger(loggerData);
+
+        res.status(200).send("OK");
+    }
+);
+
+serviceController.put('/logger/:id',
+    function (req, res) {
+        var loggerData = req.body;
+        var id = req.params.id;
+        var logger = getLogger(id);
+
+        if( logger == null ) res.status(404).json( { "error": "logger not found "+id });
+
+        removeLogger(id);
+        addLogger(loggerData);
+
+        res.status(200).send("OK");
+    }
+);
+
 
 serviceController.get('/logger',
     function (req, res) {
