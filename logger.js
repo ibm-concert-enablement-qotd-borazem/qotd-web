@@ -26,36 +26,50 @@ serviceController.post('/logger',
     }
 );
 
+function updateLogger(logger, updatedLogger) {
+    if( typeof updatedLogger.repeat.mean != 'undefined' ) {
+        logger.repeat.mean = updatedLogger.repeat.mean;
+    }
+    if( typeof updatedLogger.repeat.stdev != 'undefined' ) {
+        logger.repeat.stdev = updatedLogger.repeat.stdev;
+    } else {
+        delete logger.repeat.stdev;
+    }
+    if( typeof updatedLogger.repeat.min != 'undefined' ) {
+        logger.repeat.min = updatedLogger.repeat.min;
+    } else {
+        delete logger.repeat.min;
+    }
+    if( typeof updatedLogger.repeat.max != 'undefined' ) {
+        logger.repeat.max = updatedLogger.repeat.max;
+    } else {
+        delete logger.repeat.max;
+    }
+
+}
+
 serviceController.put('/logger',
     function (req, res) {
         var loggerData = req.body;
         var id = loggerData.id;
         var logger = getLogger(id);
-
         if( logger == null ) res.status(404).json( { "error": "logger not found "+id });
-
-        removeLogger(id);
-        addLogger(loggerData);
-
+        updateLogger(logger, loggerData);
         res.status(200).send("OK");
     }
 );
 
 serviceController.put('/logger/:id',
     function (req, res) {
-        var loggerData = req.body;
         var id = req.params.id;
+        var loggerData = req.body;
+        var did = loggerData.id;
         var logger = getLogger(id);
-
-        if( logger == null ) res.status(404).json( { "error": "logger not found "+id });
-
-        removeLogger(id);
-        addLogger(loggerData);
-
+        if( id != did || logger == null ) res.status(404).json( { "error": "logger not found "+id });
+        updateLogger(logger, loggerData);
         res.status(200).send("OK");
     }
 );
-
 
 serviceController.get('/logger',
     function (req, res) {

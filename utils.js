@@ -73,12 +73,23 @@ function nextBoxMuller(){
 // the given mean and stdev.  Also if a min and max are 
 // supplied, throw out any values out side this range.
 function genNormal(mean, stdev, min, max){
-    var num = nextBoxMuller();
-    var val = stdev * num + mean;
-    while( min >= val && val >= max ) {
-        val = genNormal(mean, stdev, min, max);    
+    if( typeof std == 'undefined' ) return mean;
+
+    var num = nextBoxMuller() * stdev + mean;
+    if( typeof min != 'undefined' && typeof max != 'undefined' ) {
+        while( min >= num && num >= max ) {
+            num = genNormal(mean, stdev, min, max);    
+        }
+    } else if( typeof min != 'undefined' ) {
+        while( min >= num ) {
+            num = genNormal(mean, stdev, min, max);    
+        }
+    } else if( typeof max != 'undefined' ) {
+        while( num >= max ) {
+            num = genNormal(mean, stdev, min, max);    
+        }
     }
-    return val;
+    return num;
 }
 exports.genNormal = genNormal;
 
