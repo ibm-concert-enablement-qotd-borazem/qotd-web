@@ -1,137 +1,10 @@
-kind: Deployment
-apiVersion: apps/v1
-metadata:
-  name: qotd-web
-  namespace: qotd
-  labels:
-    app: qotd
-    tier: web
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: qotd-web
-  template:
-    metadata:
-      labels:
-        app: qotd-web
-    spec:
-      volumes:
-        - name: qotd-web-loggers
-          configMap:
-            name: qotd-web-loggers
-            defaultMode: 420
-      restartPolicy: Always
-      containers:
-        - name: qotd-web
-          image: registry.gitlab.com/quote-of-the-day/qotd-web:latest
-          imagePullPolicy: Always
-          volumeMounts:
-            - name: qotd-web-loggers
-              readOnly: true
-              mountPath: /app/loggers
-          ports:
-            - name: http
-              containerPort: 3000
-              protocol: TCP
-            - name: svc
-              containerPort: 8080
-              protocol: TCP
-          env:
-            - name: LOCAL_LOGGING
-              value: "false"
-            - name: ENABLE_INSTANA
-              value: "true"
-            - name: QUOTE_SVC
-              value: "qotd-quote.qotd.svc.cluster.local:3001"
-            - name: AUTHOR_SVC
-              value: "qotd-author.qotd.svc.cluster.local:3002"
-            - name: RATING_SVC
-              value: "qotd-rating.qotd.svc.cluster.local:3004"
-            - name: PDF_SVC
-              value: "qotd-pdf.qotd.svc.cluster.local:3005"
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 3000
-            initialDelaySeconds: 10
-            periodSeconds: 5
-          resources:
-            requests:
-              cpu: "50m"
-              memory: "200Mi"
-            limits:
-              cpu: "200m"
-              memory: "800Mi"
----
 apiVersion: v1
-kind: Service
+kind: ConfigMap
 metadata:
-  name: qotd-web
-  labels:
-    app: qotd
-    tier: web
-spec:
-  type: ClusterIP
-  ports:
-    - port: 3000
-      targetPort: 3000
-      protocol: TCP
-      name: http
-  selector:
-    app: qotd-web
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: qotd-web-svc
-  labels:
-    app: qotd
-    tier: web
-spec:
-  type: ClusterIP
-  ports:
-    - port: 8080
-      targetPort: 8080
-      protocol: TCP
-      name: svc
-  selector:
-    app: qotd-web
----
-kind: Route
-apiVersion: route.openshift.io/v1
-metadata:
-  name: qotd-web
-  labels:
-    app: qotd
-    tier: web
-spec:
-  subdomain: ''
-  to:
-    kind: Service
-    name: qotd-web
-    weight: 100
-  port:
-    targetPort: http
-  wildcardPolicy: None
----
-kind: Route
-apiVersion: route.openshift.io/v1
-metadata:
-  name: qotd-web-svc
+  name: qotd-web-call-distribution-overrides
   namespace: qotd
-  labels:
-    app: qotd
-    tier: web
-spec:
-  subdomain: ''
-  to:
-    kind: Service
-    name: qotd-web-svc
-    weight: 100
-  port:
-    targetPort: svc
-  wildcardPolicy: None
+data:
+  overides.json: { }  # this is just a placeholder
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -143,7 +16,7 @@ data:
     {
         "id": "incident",
         "name": "Simulated incident record",
-        "template": "Disk status notifier: code=D{{v1}} dstepid={{v2}} vd={{user}}",
+        "template": "Web service sisk status notifier: code=D{{v1}} dstepid={{v2}} vd={{user}}",
         "fields": {
             "v1": {
                 "type": "randomInt",
@@ -189,3 +62,151 @@ data:
       }
     }
 
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: qotd-web
+  namespace: qotd
+  labels:
+    app: qotd
+    tier: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qotd-web
+  template:
+    metadata:
+      labels:
+        app: qotd-web
+    spec:
+      volumes:
+        - name: qotd-web-loggers
+          configMap:
+            name: qotd-web-loggers
+            defaultMode: 420
+        - name: qotd-web-call-distribution-overrides
+          configMap:
+            name: qotd-web-call-distribution-overrides
+            defaultMode: 420
+      restartPolicy: Always
+      containers:
+        - name: qotd-web
+          image: registry.gitlab.com/quote-of-the-day/qotd-web:latest
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: qotd-web-loggers
+              readOnly: true
+              mountPath: /app/loggers
+            - name: qotd-web-call-distribution-overrides
+              readOnly: true
+              mountPath: /app/config
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+            - name: svc
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: LOCAL_LOGGING
+              value: "false"
+            - name: ENABLE_INSTANA
+              value: "true"
+            - name: QUOTE_SVC
+              value: "qotd-quote.qotd.svc.cluster.local:3001"
+            - name: AUTHOR_SVC
+              value: "qotd-author.qotd.svc.cluster.local:3002"
+            - name: RATING_SVC
+              value: "qotd-rating.qotd.svc.cluster.local:3004"
+            - name: PDF_SVC
+              value: "qotd-pdf.qotd.svc.cluster.local:3005"
+            - name: ENGRAVING_SVC
+              value: "qotd-pdf.qotd.svc.cluster.local:3006"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "200Mi"
+            limits:
+              cpu: "200m"
+              memory: "800Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qotd-web
+  namespace: qotd
+  labels:
+    app: qotd
+    tier: web
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP
+      name: http
+  selector:
+    app: qotd-web
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qotd-web-svc
+  namespace: qotd
+  labels:
+    app: qotd
+    tier: web
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: svc
+  selector:
+    app: qotd-web
+---
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: qotd-web
+  namespace: qotd
+  labels:
+    app: qotd
+    tier: web
+spec:
+  subdomain: ''
+  to:
+    kind: Service
+    name: qotd-web
+    weight: 100
+  port:
+    targetPort: http
+  wildcardPolicy: None
+---
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: qotd-web-svc
+  namespace: qotd
+  labels:
+    app: qotd
+    tier: web
+spec:
+  subdomain: ''
+  to:
+    kind: Service
+    name: qotd-web-svc
+    weight: 100
+  port:
+    targetPort: svc
+  wildcardPolicy: None
+---

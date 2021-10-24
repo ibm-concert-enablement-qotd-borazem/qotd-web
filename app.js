@@ -218,7 +218,11 @@ app.get('/', function (req, res) {
 
     setTimeout(function () {
 
-        getDailyQuote(requestToken)
+        var override = controller.callStatusOverride('daily');
+        if( override ) {
+            controller.handleOverride(res,override,requestToken);
+        } else {
+            getDailyQuote(requestToken)
             .then((quote) => {
                 var now = new moment();
 
@@ -250,6 +254,9 @@ app.get('/', function (req, res) {
                     res.status(500).send("Problem getting daily quote.");
                 }
             );
+        }
+
+
 
     }, delay);
 
@@ -266,34 +273,39 @@ app.get('/random', function (req, res) {
 
     setTimeout(function () {
 
-        getRandomQuote(requestToken)
-            .then((quote) => {
-                quote.today = "";
-                quote.title = "Random Quote";
-                addRating(quote, requestToken)
-                    .then((quote) => {
-                        if (typeof ENGRAVING_SVC != 'undefined' && ENGRAVING_SVC != "") {
-                            quote.enableOrdering = true;
-                        }
-                        quote.INSTANA_HEADER = INSTANA_HEADER;
-                        res.render('home', quote);
-                    })
-                    .catch(
-                        (err) => {
-                            utils.log(" Problem getting rating. Err: " + err, requestToken);
-                            // send th epage anyway but with a -1 rating
-                            quote.rating = -1;
+        var override = controller.callStatusOverride('random');
+        if( override ) {
+            controller.handleOverride(res,override,requestToken);
+        } else {
+            getRandomQuote(requestToken)
+                .then((quote) => {
+                    quote.today = "";
+                    quote.title = "Random Quote";
+                    addRating(quote, requestToken)
+                        .then((quote) => {
+                            if (typeof ENGRAVING_SVC != 'undefined' && ENGRAVING_SVC != "") {
+                                quote.enableOrdering = true;
+                            }
                             quote.INSTANA_HEADER = INSTANA_HEADER;
                             res.render('home', quote);
-                        }
-                    );
-            })
-            .catch(
-                (err) => {
-                    utils.log("Internal Error.  Problem getting random quote. Err: " + err, requestToken);
-                    res.status(500).send("Problem getting random quote.");
-                }
-            );
+                        })
+                        .catch(
+                            (err) => {
+                                utils.log(" Problem getting rating. Err: " + err, requestToken);
+                                // send th epage anyway but with a -1 rating
+                                quote.rating = -1;
+                                quote.INSTANA_HEADER = INSTANA_HEADER;
+                                res.render('home', quote);
+                            }
+                        );
+                })
+                .catch(
+                    (err) => {
+                        utils.log("Internal Error.  Problem getting random quote. Err: " + err, requestToken);
+                        res.status(500).send("Problem getting random quote.");
+                    }
+                );
+        }
 
     }, delay);
 
@@ -314,47 +326,31 @@ app.get('/author/:id', function (req, res) {
     var port = 80;
     if (parsedUrl.port != null) port = parsedUrl.port;
     setTimeout(function () {
-        const options = {
-            "headers": { "Accept": "application/json" },
-            "method": 'GET',
-            "hostname": hostname,
-            "port": port,
-            "path": '/authors/' + id + '?requestToken=' + requestToken
-        }
 
-        http.request(options, function (response) {
-            var rawData = [];
-            response.on('data', (chunk) => {
-                rawData.push(chunk);
-            });
-            response.on('end', () => {
-                utils.logLocal(`Quote svc response: ${response.statusCode}`);
+        var override = controller.callStatusOverride('author_id');
+        if( override ) {
+            controller.handleOverride(res,override,requestToken);
+        } else {
 
-                if (response.statusCode == 200) {
-                    utils.log("Author bio received.  Author id: " + id, requestToken);
-                    var buffer = Buffer.concat(rawData).toString();
-                    var bio = JSON.parse(buffer);
-                    bio.INSTANA_HEADER = INSTANA_HEADER;
-                    res.render('author', bio);
-                } else {
-                    var quote = {
-                        "title": "QotD Error",
-                        "today": "",
-                        "quote": response.statusCode, // todo: get error msg
-                        "author": "",
-                        "genre": ""
-                    };
-                    utils.log("Problem getting author bio. Service Status Code: " + response.statusCode, requestToken);
-                    res.status(500).send("Problem getting author bio.");
-                }
-            });
-        })
-            .on('error', error => {
-                res.status(500).send("Problem getting author bio.");
-                utils.log("Problem getting author bio.  " + error, requestToken);
+            const options = {
+                "headers": { "Accept": "application/json" },
+                "method": 'GET',
+                "hostname": hostname,
+                "port": port,
+                "path": '/authors/' + id + '?requestToken=' + requestToken
+            }
+
+            utils.httpRequest(options)
+            .then( (bio) => {
+                utils.log("Author bio received.  Author id: " + id, requestToken);
+                bio.INSTANA_HEADER = INSTANA_HEADER;
+                res.render('author', bio);
             })
-            .end();
-
+            .catch( (error) => {
+                utils.log("Problem getting author bio.  " + error.message, requestToken);
+                res.status(error.code).send("Problem getting author bio.");
+            })
+        }
     }, delay);
 });
 
@@ -374,48 +370,30 @@ app.get('/images/:id',
         var port = 80;
         if (parsedUrl.port != null) port = parsedUrl.port;
         setTimeout(function () {
-            const options = {
-                "headers": { "Accept": "image/jpeg" },
-                "method": 'GET',
-                "hostname": hostname,
-                "port": port,
-                "path": '/images/' + id + '?requestToken=' + requestToken
-            }
 
-            http.request(options, function (response) {
-                var rawData = [];
-                response.on('data', (chunk) => {
-                    rawData.push(chunk);
-                });
-                response.on('end', () => {
-                    utils.logLocal(`Image svc response: ${response.statusCode}`);
+            var override = controller.callStatusOverride('images_id');
+            if( override ) {
+                controller.handleOverride(res,override,requestToken);
+            } else {
+                const options = {
+                    "headers": { "Accept": "image/jpeg" },
+                    "method": 'GET',
+                    "hostname": hostname,
+                    "port": port,
+                    "path": '/images/' + id + '?requestToken=' + requestToken
+                }
 
-                    if (response.statusCode == 200) {
-                        var buffer = Buffer.concat(rawData);
-                        res.writeHead(200, {
-                            'Content-Type': 'image/jpeg',
-                            'Content-Length': buffer.length
-                        });
-                        res.end(Buffer.from(buffer, 'binary'));
-                        utils.log("Author image provided.", requestToken);
-                    } else {
-                        // assume any error will report a 404
-                        // TOTO: If image not there use default portrait 
-                        utils.log("Image " + id + " not found. Using default image.", requestToken);
-                        var defImage = fs.readFileSync('./public/images/generic.png');
-                        res.writeHead(200, {
-                            'Content-Type': 'image/jpeg',
-                            'Content-Length': defImage.length
-                        });
-                        res.end(Buffer.from(defImage, 'binary'));
-                    }
-                });
-            })
-                .on('error', error => {
-                    utils.log("Problem getting image " + id + " Error: " + error, requestToken);
-                    res.status(500).send("Image " + id + " not found");
+                utils.httpRequest(options)
+                .then( (buffer) => {
+                    res.end(Buffer.from(buffer, 'binary'));
+                    utils.log("Author image provided.", requestToken);
                 })
-                .end();
+                .catch( (error) => {
+                    utils.log("Problem getting image " + id + " Error: " + error.message, requestToken);
+                    res.status(error.code).send("Image " + id + " not found");
+                });
+
+            }
         }, delay);
     }
 );
@@ -436,43 +414,30 @@ app.get('/pdf/:id',
         var port = 80;
         if (parsedUrl.port != null) port = parsedUrl.port;
         setTimeout(function () {
-            const options = {
-                "headers": { "Accept": "application/pdf" },
-                "method": 'GET',
-                "hostname": hostname,
-                "port": port,
-                "path": '/pdf/' + id + '?requestToken=' + requestToken
-            }
 
-            http.request(options, function (response) {
-                var rawData = [];
-                response.on('data', (chunk) => {
-                    rawData.push(chunk);
-                });
-                response.on('end', () => {
-                    utils.logLocal(`Image svc response: ${response.statusCode}`);
+            var override = controller.callStatusOverride('pdf_id');
+            if( override ) {
+                controller.handleOverride(res,override,requestToken);
+            } else {
 
-                    if (response.statusCode == 200) {
-                        utils.log("PDF received.", requestToken);
-                        var buffer = Buffer.concat(rawData);
-                        res.writeHead(200, {
-                            'Content-Type': 'application/pdf',
-                            'Content-Length': buffer.length
-                        });
-                        res.end(Buffer.from(buffer, 'binary'));
-                        utils.log("PDF image sent.", requestToken);
-                    } else {
-                        // assume any error will report a 404
-                        utils.log("PDF " + id + " not found.", requestToken);
-                        res.status(404).send("PDF " + id + " not found");
-                    }
-                });
-            })
-                .on('error', error => {
-                    utils.log("Attempt to get PDF " + id + " unsuccessful. Error: " + error, requestToken);
-                    res.status(500).send("PDF " + id + " Error: " + error);
+                const options = {
+                    "headers": { "Accept": "application/pdf" },
+                    "method": 'GET',
+                    "hostname": hostname,
+                    "port": port,
+                    "path": '/pdf/' + id + '?requestToken=' + requestToken
+                }
+
+                utils.httpRequest(options)
+                .then( (buffer) => {
+                    res.end(Buffer.from(buffer, 'binary'));
+                    utils.log("Author image provided.", requestToken);
                 })
-                .end();
+                .catch( (error) => {
+                    utils.log("Problem getting image " + id + " Error: " + error.message, requestToken);
+                    res.status(error.code).send("Image " + id + " not found");
+                });
+            }
 
         }, delay);
     }
@@ -501,8 +466,13 @@ app.get('/order/:id',
         order.zip = faker.address.zipCodeByState(order.state);
 
         setTimeout(() => {
-            order.INSTANA_HEADER = INSTANA_HEADER;
-            res.render('order', order);
+            var override = controller.callStatusOverride('order_id');
+            if( override ) {
+                controller.handleOverride(res,override,requestToken);
+            } else {
+                order.INSTANA_HEADER = INSTANA_HEADER;
+                res.render('order', order);
+            }
         }, delay);
     }
 );
@@ -519,7 +489,11 @@ async function getQuote(id, requestToken) {
         "port": port,
         "path": `/quotes/${id}?requestToken=${requestToken}`
     }
-    return httpRequest(options);
+    try{
+        return await utils.httpRequest(options);
+    } catch( error ) {
+        utils.log("Problem getting quote: " + error );
+    }
 }
 
 app.post('/order/:id',
@@ -534,15 +508,6 @@ app.post('/order/:id',
         var order = req.body;
         order.customer = faker.finance.accountName;
 
-        // var quote;
-        // try{
-        //     quote = await getQuote(id,requestToken);
-        // } catch( error ) {
-        //     utils.log(error,requestToken);
-        //     res.status(500).send(error);
-        //     return;
-        // }
-
         var quote = await getQuote(id, requestToken);
         order.quote = quote.quote;
         order.author = quote.author;
@@ -554,86 +519,37 @@ app.post('/order/:id',
         if (parsedUrl.port != null) port = parsedUrl.port;
         var path = parsedUrl.pathname + '/order?requestToken=' + requestToken;
         setTimeout(function () {
-            const options = {
-                "headers": { "Content-Type": "application/json" },
-                "Content-Length": payload.length,
-                "method": 'POST',
-                "hostname": hostname,
-                "port": port,
-                "path": path
+            var override = controller.callStatusOverride('ratings_id');
+            if( override ) {
+                controller.handleOverride(res,override,requestToken);
+            } else {
+                const options = {
+                    "headers": { "Content-Type": "application/json" },
+                    "Content-Length": payload.length,
+                    "method": 'POST',
+                    "hostname": hostname,
+                    "port": port,
+                    "path": path
+                }
+
+                utils.httpRequest(options)
+                .then( (buffer) => {
+                    var orderConfirmation = buffer.toString();
+                    utils.logLocal(`\tGot POST respponse http://${options.hostname}:${options.port}${options.path} ${orderConfirmation}`);
+                    res.status(200).send(orderConfirmation);
+                })
+                .catch( (error) => {
+                    utils.log("Problem with Order service: " + id + " Error: " + error.message, requestToken);
+                    res.status(error.code).send("Problem with Order service: " + id + " Error: " + error.message);
+                });    
             }
-
-            var orderReq = http.request(options, function (response) {
-                utils.logLocal(`\tPOST http://${options.hostname}:${options.port}${options.path}`);
-                utils.logLocal('\t' + payload);
-                var rawData = [];
-                response.on('data', (chunk) => {
-                    rawData.push(chunk);
-                });
-                response.on('end', () => {
-                    utils.logLocal(`\tFinished POST http://${options.hostname}:${options.port}${options.path}`);
-
-                    if (response.statusCode == 200) {
-                        var buffer = Buffer.concat(rawData).toString();
-                        utils.logLocal(`\tGot POST respponse http://${options.hostname}:${options.port}${options.path} ${buffer}`);
-                        res.status(200).send("Success");
-                    } else {
-                        utils.logLocal(`\tGot POST status response http://${options.hostname}:${options.port}${options.path} ${response.statusCode}`);
-                        res.status(response.statusCode).send("Problem with Order service.");
-                    }
-                });
-            });
-
-            orderReq.on('error', error => {
-                utils.logLocal(`\tGot POST Error  http://${options.hostname}:${options.port}${options.path} ${error}`);
-                res.status(500).send(error);
-            });
-
-            orderReq.write(payload);
-            orderReq.end();
 
         }, delay);
     }
 
 );
 
-function httpRequest(options,payload) {
-    return new Promise((resolve, reject) => {
-        var httpReq = http.request(options, function (res) {
-            utils.logLocal(`\t${options.method} http://${options.hostname}:${options.port}${options.path}`);
-            var rawData = [];
-            res.on('data', (chunk) => {
-                rawData.push(chunk);
-            });
-            res.on('end', () => {
-                utils.logLocal(`\tFinished ${options.method} http://${options.hostname}:${options.port}${options.path}`);
 
-                if (res.statusCode == 200) {
-                    utils.logLocal(`\tGot http://${options.hostname}:${options.port}${options.path}`);
-                    var buffer = Buffer.concat(rawData).toString();
-                    var obj = JSON.parse(buffer);
-                    resolve(obj);
-                } else {
-                    reject(`Failed: ${res.statusCode}`);
-                }
-            });
-        });
-
-        httpReq.on('error', error => {
-            utils.logLocal(`\tError: ${error}`);
-            reject(error);
-        });
-
-        if( typeof payload != 'undefined' && payload.length>0 ) {
-            httpReq.write(payload);
-        }
-
-        httpReq.end();
-    })
-    .catch((error) => {
-        log(`Rejecting ${options.hostname} http://${options.hostname}:${options.port}${options.path}; Error: ${error}`);
-    });
-}
 
 //----------------------------------------------------------------------------------------------
 // Main App
@@ -649,7 +565,7 @@ app.get('/version',
 const package = require('./package.json');
 const appName = package.name;
 const appVersion = package.version;
-const buildInfo = fs.readFileSync('build.txt');
+const buildInfo = fs.readFileSync('build.txt').toString().trim();
 
 appService = app.listen(app.get('port'), '0.0.0.0', function () {
     console.log(`Starting ${appName} v${appVersion}, ${buildInfo} on port ${app.get('port')}`);
@@ -672,4 +588,4 @@ const logger = require('./logger');
 const controller = require('./serviceController.js');
 
 logger.intializeDefaultLoggers();
-
+controller.initializeCallOverrides();

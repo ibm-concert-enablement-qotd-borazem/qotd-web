@@ -1,6 +1,7 @@
 const utils = require('./utils.js');
 const metrics = require('./metrics.js');
 const loggerEngine = require('./logger.js');
+const fs = require('fs');
 
 function startService() {
     appService = serviceController.listen(serviceController.get('port'), '0.0.0.0', function () {
@@ -92,38 +93,44 @@ serviceController.delete('/liveness', function(req,res){
     res.json(_liveness);
 });
 
-var _callStatusDistribution = [];
-[
-    { "code": 200, "weight": 9 },
-    { 
-        "code": 301, "weight": 1, 
-        "headers": { "location": "https://example.com" },
-        "payload": "Go here",
-        "log": {
-            "template": "Unexpected internal error: {{type}}",
-            "fields": {
-                "type": {
-                    "type": "pickWeighted",
-                    "options": [
-                        { "value": "disk", "weight": 6 },
-                        { "value": "memory", "weight": 4 }
-                    ]            
-                }
-            }
+//-------------------------------------------------------------------------------------------------------------
+// Call Distribution Overides
+
+// global set of defined overrides
+_callStatusDistribution = {};
+
+function handleOverride(res, override, requestToken) {
+    if( typeof override.headers != 'undefined' ) {
+        var keys = Object.keys(override.headers);
+        for( var header of keys ) {
+            res.header(header, override.headers[header] );
         }
     }
-]            
+    var payload = "";
+    if( typeof override.payload != 'undefined' ) {
+        payload = override.payload;
+    } 
+    res.status(override.code).send(payload);
+    if( typeof override.log != undefined ) {
+        var log = loggerEngine.genLog(override.log);
+        utils.log(log,requestToken);
+    }
+}
+exports.handleOverride = handleOverride;
 
-function callStatusOverride(){
-    if( _callStatusDistribution.length == 0 ) return null;
+function callStatusOverride(path){
+    var keys = Object.keys(_callStatusDistribution);
+    if( keys.length == 0 || typeof _callStatusDistribution[path] == 'undefined') return null;
+
+    var callStatusDistribution = _callStatusDistribution[path];
 
     var optionsArray = [];
-    for( var option of _callStatusDistribution ){
+    for( var option of callStatusDistribution ){
 
         // do checking here
         var code = option.code;
         var weight = option.weight;
-        if( code >= 100 && code <= 563 && option.weight >= 0 ) {
+        if( code <= 563 && option.weight >= 0 ) {
             for(var j=0;j<weight;j++){
                 optionsArray.push(option);
             }
@@ -134,7 +141,7 @@ function callStatusOverride(){
         var len = optionsArray.length;
         var i = utils.intBetween(0,len);
         var override = optionsArray[i]; 
-        if( override.code == 200 ) override = null;
+        if( override.code <= 0 ) override = null;
         return override;
     } else {
         return null;
@@ -144,24 +151,73 @@ function callStatusOverride(){
 
 exports.callStatusOverride = callStatusOverride;
 
-exports.callStatusDistribution = _callStatusDistribution;
+function validationErrors(override){
 
-serviceController.get('/callDistribution', function(req,res){
-    res.json(_callStatusDistribution);
+
+    return null;
+}
+
+serviceController.get('/callDistribution/:pathId', function(req,res){
+    var pathId = req.params.pathId;
+    if( typeof _callStatusDistribution[pathId] != 'undefined' ) {
+        res.status(200).json(_callStatusDistribution[pathId]);
+    }
+    res.status(404).send("Call distribution override not found");
 });
 
-serviceController.put('/callDistribution', function(req,res){
-    if( Array.isArray( req.body ) ) {
-        _callStatusDistribution = req.body;
-        res.status(200).send("OK");
+serviceController.post('/callDistribution/:pathId', function(req,res){
+    var pathId = req.params.pathId;
+    if( typeof _callStatusDistribution[pathId] == 'undefined' ) {
+        var override = req.body;
+        var errors = validationErrors( override );
+        if( errors == null ) {
+            _callStatusDistribution[pathId] = override;
+            res.status(201).send("OK");
+        } else {
+            res.status(422).send("Errors in override: " + errors);
+        }
     } else {
-        res.status(400).send("Expecting JSON array");
+        res.status(409).send("Conflict.  Path already exists.");
     }
 });
 
-serviceController.delete('/callDistribution', function(req,res){
-    _callStatusDistribution =[];
-    res.status(200).send("OK");
+serviceController.put('/callDistribution/:pathId', function(req,res){
+    var pathId = req.params.pathId;
+    if( typeof _callStatusDistribution[pathId] != 'undefined' ) {
+        var override = req.body;
+        var errors = validationErrors( override );
+        if( errors == null ) {
+            _callStatusDistribution[pathId] = override;
+            res.status(200).send("OK");
+        } else {
+            res.status(422).send("Errors in override: " + errors);
+        }
+    } else {
+        res.status(404).send("PathId Not Found");
+    }
 });
+
+serviceController.delete('/callDistribution/:pathId', function(req,res){
+    var pathId = req.params.pathId;
+    if( typeof _callStatusDistribution[pathId] != 'undefined' ) {
+        delete _callStatusDistribution[pathId];
+        res.status(204).send("OK");
+    } else {
+        res.status(404).send("PathId Not Found");
+    }
+});
+
+function initializeCallOverrides(){
+
+    try{
+        var data = fs.readFileSync('./config/overrides.json');
+        _callStatusDistribution = JSON.parse(data);
+    } catch( error ) {
+        utils.log("Error reading call overrides: " + error);
+    }
+
+}
+
+exports.initializeCallOverrides = initializeCallOverrides;
 
 startService();

@@ -73,7 +73,7 @@ function nextBoxMuller(){
 // the given mean and stdev.  Also if a min and max are 
 // supplied, throw out any values out side this range.
 function genNormal(mean, stdev, min, max){
-    if( typeof std == 'undefined' ) return mean;
+    if( typeof stdev == 'undefined' ) return mean;
 
     var num = nextBoxMuller() * stdev + mean;
     if( typeof min != 'undefined' && typeof max != 'undefined' ) {
@@ -124,3 +124,62 @@ function formatTime(timeInMs) {
     return timeInMs +'ms';
 }
 exports.formatTime = formatTime;
+
+//========================================================================================================================
+// HTTP utils
+
+const http = require('http');
+
+function httpRequest(options,payload) {
+    return new Promise((resolve, reject) => {
+        var httpReq = http.request(options, function (res) {
+            logLocal(`\t${options.method} http://${options.hostname}:${options.port}${options.path}`);
+            var rawData = [];
+            res.on('data', (chunk) => {
+                rawData.push(chunk);
+            });
+            res.on('end', () => {
+                logLocal(`\tFinished ${options.method} http://${options.hostname}:${options.port}${options.path}`);
+
+                if ( res.statusCode < 300 ) {
+                    logLocal(`\tGot http://${options.hostname}:${options.port}${options.path}`);
+                    var buffer = Buffer.concat(rawData);
+                    if( typeof options.headers != 'undefined' && typeof options.headers.Accept != 'undefined' && options.headers.Accept == 'application/json') {
+                        var obj = JSON.parse(buffer.toString());
+                        resolve(obj);
+                    } else {
+                        resolve(buffer);
+                    }
+                } else {
+                    var failure = {
+                        "code": res.statusCode,
+                        "message": res.statusMessage
+                    }
+                    reject(failure);
+                }
+            });
+        });
+
+        httpReq.on('error', error => {
+            logLocal(`\tError: ${error}`);
+            var failure = {
+                "code": 500,
+                "message": error
+            }
+            reject(failure);
+        });
+
+        if( typeof payload != 'undefined' && payload.length>0 ) {
+            httpReq.write(payload);
+        }
+
+        httpReq.end();
+    })
+    .catch((error) => {
+        log(`Rejecting ${options.hostname} http://${options.hostname}:${options.port}${options.path}; Error: ${error}`);
+    });
+}
+
+exports.httpRequest = httpRequest;
+
+
