@@ -532,7 +532,7 @@ app.post('/order/:id',
                     "path": path
                 }
 
-                utils.httpRequest(options)
+                utils.httpRequest(options,payload)
                 .then( (buffer) => {
                     var orderConfirmation = buffer.toString();
                     utils.logLocal(`\tGot POST respponse http://${options.hostname}:${options.port}${options.path} ${orderConfirmation}`);
