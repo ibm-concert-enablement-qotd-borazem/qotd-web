@@ -431,10 +431,10 @@ app.get('/pdf/:id',
                 utils.httpRequest(options)
                 .then( (buffer) => {
                     res.end(Buffer.from(buffer, 'binary'));
-                    utils.log("Author image provided.", requestToken);
+                    utils.log("PDF Document provided.", requestToken);
                 })
                 .catch( (error) => {
-                    utils.log("Problem getting image " + id + " Error: " + error.message, requestToken);
+                    utils.log("Problem getting image " + id + " Error: " + JSON.stringify(error), requestToken);
                     res.status(error.code).send("Image " + id + " not found");
                 });
             }

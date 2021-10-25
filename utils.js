@@ -176,7 +176,8 @@ function httpRequest(options,payload) {
         httpReq.end();
     })
     .catch((error) => {
-        log(`Rejecting ${options.hostname} http://${options.hostname}:${options.port}${options.path}; Error: ${error}`);
+        var msg = JSON.stringify(error);
+        log(`Rejecting ${options.hostname} http://${options.hostname}:${options.port}${options.path}; Error: ${msg}`);
     });
 }
 

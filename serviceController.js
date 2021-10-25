@@ -207,6 +207,11 @@ serviceController.delete('/callDistribution/:pathId', function(req,res){
     }
 });
 
+serviceController.delete('/callDistribution', function(req,res){
+    initializeCallOverrides();
+    res.status(200).send("OK Call Distributions Reset");
+});
+
 function initializeCallOverrides(){
 
     try{
