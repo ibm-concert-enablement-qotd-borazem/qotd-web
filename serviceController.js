@@ -153,9 +153,21 @@ exports.callStatusOverride = callStatusOverride;
 
 function validationErrors(override){
 
+    // todo
 
     return null;
 }
+
+serviceController.get('/callDistribution/', function(req,res){
+    if( _callStatusDistribution == null ) _callStatusDistribution = {};
+    res.status(200).json(_callStatusDistribution);
+});
+
+serviceController.delete('/callDistribution', function(req,res){
+    initializeCallOverrides();
+    res.status(200).send("OK Call Distributions Reset");
+});
+
 
 serviceController.get('/callDistribution/:pathId', function(req,res){
     var pathId = req.params.pathId;
@@ -207,10 +219,6 @@ serviceController.delete('/callDistribution/:pathId', function(req,res){
     }
 });
 
-serviceController.delete('/callDistribution', function(req,res){
-    initializeCallOverrides();
-    res.status(200).send("OK Call Distributions Reset");
-});
 
 function initializeCallOverrides(){
 
