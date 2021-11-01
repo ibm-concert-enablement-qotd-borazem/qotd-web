@@ -519,7 +519,7 @@ app.post('/order/:id',
         if (parsedUrl.port != null) port = parsedUrl.port;
         var path = parsedUrl.pathname + '/order?requestToken=' + requestToken;
         setTimeout(function () {
-            var override = controller.callStatusOverride('ratings_id');
+            var override = controller.callStatusOverride('post_order_id');
             if( override ) {
                 controller.handleOverride(res,override,requestToken);
             } else {
