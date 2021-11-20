@@ -118,7 +118,7 @@ function addRating(quote, requestToken) {
         })
         .on('timeout', () => {
             utils.log(`Timeout on http request`, requestToken);
-            reject(error);
+            reject({"msg":"timeout error"});
         })
         .on('error', error => {
             utils.log(`Error on rating http request: ${error}`, requestToken);
