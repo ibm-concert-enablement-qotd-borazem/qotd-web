@@ -92,7 +92,8 @@ function addRating(quote, requestToken) {
             "method": 'GET',
             "hostname": hostname,
             "port": port,
-            "path": '/ratings/' + quote.id + '?requestToken=' + requestToken
+            "path": '/ratings/' + quote.id + '?requestToken=' + requestToken,
+            "timeout": 3000
         }
 
         http.request(options, function (response) {
@@ -115,11 +116,11 @@ function addRating(quote, requestToken) {
                 }
             });
         })
-            .on('error', error => {
-                utils.log(`Error on http request: ${error}`, requestToken);
-                reject(error);
-            })
-            .end();
+        .on('error', error => {
+            utils.log(`Error on http request: ${error}`, requestToken);
+            reject(error);
+        })
+        .end();
     })
 }
 
