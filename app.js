@@ -115,12 +115,12 @@ function addRating(quote, requestToken) {
                 }
             });
         })
-        .on('error', error => {
-            utils.log(`Error on http request: ${error}`, requestToken);
+        .setTimeout(2000, () => {
+            utils.log(`Timeout on http request`, requestToken);
             reject(error);
         })
-        .setTimeout(3000, error => {
-            utils.log(`Timeout on http request: ${error}`, requestToken);
+        .on('error', error => {
+            utils.log(`Error on http request: ${error}`, requestToken);
             reject(error);
         })
         .end();
