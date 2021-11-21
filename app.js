@@ -310,6 +310,9 @@ app.get('/random', function (req, res) {
                                 utils.log(" Problem getting rating. Err: " + err, requestToken);
                                 // send th epage anyway but with a -1 rating
                                 quote.rating = -1;
+                                if (typeof ENGRAVING_SVC != 'undefined' && ENGRAVING_SVC != "") {
+                                    quote.enableOrdering = true;
+                                }
                                 quote.INSTANA_HEADER = INSTANA_HEADER;
                                 res.render('home', quote);
                             }
