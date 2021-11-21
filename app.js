@@ -364,10 +364,6 @@ app.get('/author/:id', function (req, res) {
                 bio.showImage = SHOW_IMAGE;
                 res.render('author', bio);
             })
-            .on('timeout', () => {
-                utils.log(`Timeout author http request`, requestToken);
-                reject(`Timeout on author http request`);
-            })
             .catch( (error) => {
                 utils.log("Problem getting author bio.  " + error.message, requestToken);
                 res.status(error.code).send("Problem getting author bio.");
@@ -410,10 +406,6 @@ app.get('/images/:id',
                 .then( (buffer) => {
                     res.end(Buffer.from(buffer, 'binary'));
                     utils.log("Author image provided.", requestToken);
-                })
-                .on('timeout', () => {
-                    utils.log(`Timeout image http request`, requestToken);
-                    reject(`Timeout on image http request`);
                 })
                 .catch( (error) => {
                     utils.log("Problem getting image " + id + " Error: " + error.message, requestToken);
@@ -460,10 +452,6 @@ app.get('/pdf/:id',
                 .then( (buffer) => {
                     res.end(Buffer.from(buffer, 'binary'));
                     utils.log("PDF Document provided.", requestToken);
-                })
-                .on('timeout', () => {
-                    utils.log(`Timeout pdf http request`, requestToken);
-                    reject(`Timeout on pdf http request`);
                 })
                 .catch( (error) => {
                     utils.log("Problem getting image " + id + " Error: " + JSON.stringify(error), requestToken);
@@ -571,10 +559,6 @@ app.post('/order/:id',
                     var orderConfirmation = buffer.toString();
                     utils.logLocal(`\tGot POST respponse http://${options.hostname}:${options.port}${options.path} ${orderConfirmation}`);
                     res.status(200).send(orderConfirmation);
-                })
-                .on('timeout', () => {
-                    utils.log(`Timeout order http POST request`, requestToken);
-                    reject(`Timeout order http POST request`);
                 })
                 .catch( (error) => {
                     utils.log("Problem with Order service: " + id + " Error: " + error.message, requestToken);
