@@ -169,7 +169,6 @@ function httpRequest(options,payload) {
             reject(failure);
         });
 
-
         httpReq.on('timeout', () => {
             utils.log(`Timeout http request ${options.method} http://${options.hostname}:${options.port}${options.path}`, requestToken);
             reject(`Timeout http request ${options.method} http://${options.hostname}:${options.port}${options.path}`);

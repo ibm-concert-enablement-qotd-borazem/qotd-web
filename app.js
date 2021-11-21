@@ -43,7 +43,7 @@ AUTHOR_SVC = process.env.AUTHOR_SVC;
 RATING_SVC = process.env.RATING_SVC;
 PDF_SVC = process.env.PDF_SVC;
 ENGRAVING_SVC = process.env.ENGRAVING_SVC;
-SHOW_IMAGE = process.env.SHOW_IMAGE;
+HIDE_IMAGE = ( process.env.HIDE_IMAGE == "true" );
 
 app = express();
 app.set('views', __dirname + '/views');
@@ -361,7 +361,7 @@ app.get('/author/:id', function (req, res) {
             .then( (bio) => {
                 utils.log("Author bio received.  Author id: " + id, requestToken);
                 bio.INSTANA_HEADER = INSTANA_HEADER;
-                bio.showImage = SHOW_IMAGE;
+                bio.hideImage = HIDE_IMAGE;
                 res.render('author', bio);
             })
             .catch( (error) => {
