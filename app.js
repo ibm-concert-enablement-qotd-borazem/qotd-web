@@ -43,6 +43,7 @@ AUTHOR_SVC = process.env.AUTHOR_SVC;
 RATING_SVC = process.env.RATING_SVC;
 PDF_SVC = process.env.PDF_SVC;
 ENGRAVING_SVC = process.env.ENGRAVING_SVC;
+SHOW_IMAGE = process.env.SHOW_IMAGE;
 
 app = express();
 app.set('views', __dirname + '/views');
@@ -117,8 +118,8 @@ function addRating(quote, requestToken) {
             });
         })
         .on('timeout', () => {
-            utils.log(`Timeout on http request`, requestToken);
-            reject({"msg":"timeout error"});
+            utils.log(`Timeout on rating http request`, requestToken);
+            reject(`Timeout on rating http request`);
         })
         .on('error', error => {
             utils.log(`Error on rating http request: ${error}`, requestToken);
@@ -141,7 +142,8 @@ function getDailyQuote(requestToken) {
             "method": 'GET',
             "hostname": hostname,
             "port": port,
-            "path": '/daily?requestToken=' + requestToken
+            "path": '/daily?requestToken=' + requestToken,
+            "timeout": 2000
         }
 
         http.request(options, function (response) {
@@ -162,11 +164,15 @@ function getDailyQuote(requestToken) {
                 }
             });
         })
-            .on('error', error => {
-                utils.log(`Error on http request: ${error}`, requestToken);
-                reject(error);
-            })
-            .end();
+        .on('timeout', () => {
+            utils.log(`Timeout daily quote http request`, requestToken);
+            reject(`Timeout on daily quote http request`);
+        })
+        .on('error', error => {
+            utils.log(`Error on http request: ${error}`, requestToken);
+            reject(error);
+        })
+        .end();
     })
 }
 
@@ -182,7 +188,8 @@ function getRandomQuote(requestToken) {
             "method": 'GET',
             "hostname": hostname,
             "port": port,
-            "path": '/random?requestToken=' + requestToken
+            "path": '/random?requestToken=' + requestToken,
+            "timeout": 2000
         }
 
         http.request(options, function (response) {
@@ -203,11 +210,15 @@ function getRandomQuote(requestToken) {
                 }
             });
         })
-            .on('error', error => {
-                utils.log(`Error on http request: ${error}`, requestToken);
-                reject(error);
-            })
-            .end();
+        .on('timeout', () => {
+            utils.log(`Timeout random quote http request`, requestToken);
+            reject(`Timeout on random quote http request`);
+        })
+        .on('error', error => {
+            utils.log(`Error on http request: ${error}`, requestToken);
+            reject(error);
+        })
+        .end();
 
     })
 }
@@ -342,14 +353,20 @@ app.get('/author/:id', function (req, res) {
                 "method": 'GET',
                 "hostname": hostname,
                 "port": port,
-                "path": '/authors/' + id + '?requestToken=' + requestToken
+                "path": '/authors/' + id + '?requestToken=' + requestToken,
+                "timeout": 2000
             }
 
             utils.httpRequest(options)
             .then( (bio) => {
                 utils.log("Author bio received.  Author id: " + id, requestToken);
                 bio.INSTANA_HEADER = INSTANA_HEADER;
+                bio.showImage = SHOW_IMAGE;
                 res.render('author', bio);
+            })
+            .on('timeout', () => {
+                utils.log(`Timeout author http request`, requestToken);
+                reject(`Timeout on author http request`);
             })
             .catch( (error) => {
                 utils.log("Problem getting author bio.  " + error.message, requestToken);
@@ -385,13 +402,18 @@ app.get('/images/:id',
                     "method": 'GET',
                     "hostname": hostname,
                     "port": port,
-                    "path": '/images/' + id + '?requestToken=' + requestToken
+                    "path": '/images/' + id + '?requestToken=' + requestToken,
+                    "timeout": 2000
                 }
 
                 utils.httpRequest(options)
                 .then( (buffer) => {
                     res.end(Buffer.from(buffer, 'binary'));
                     utils.log("Author image provided.", requestToken);
+                })
+                .on('timeout', () => {
+                    utils.log(`Timeout image http request`, requestToken);
+                    reject(`Timeout on image http request`);
                 })
                 .catch( (error) => {
                     utils.log("Problem getting image " + id + " Error: " + error.message, requestToken);
@@ -430,13 +452,18 @@ app.get('/pdf/:id',
                     "method": 'GET',
                     "hostname": hostname,
                     "port": port,
-                    "path": '/pdf/' + id + '?requestToken=' + requestToken
+                    "path": '/pdf/' + id + '?requestToken=' + requestToken,
+                    "timeout": 2000
                 }
 
                 utils.httpRequest(options)
                 .then( (buffer) => {
                     res.end(Buffer.from(buffer, 'binary'));
                     utils.log("PDF Document provided.", requestToken);
+                })
+                .on('timeout', () => {
+                    utils.log(`Timeout pdf http request`, requestToken);
+                    reject(`Timeout on pdf http request`);
                 })
                 .catch( (error) => {
                     utils.log("Problem getting image " + id + " Error: " + JSON.stringify(error), requestToken);
@@ -492,7 +519,8 @@ async function getQuote(id, requestToken) {
         "method": 'GET',
         "hostname": hostname,
         "port": port,
-        "path": `/quotes/${id}?requestToken=${requestToken}`
+        "path": `/quotes/${id}?requestToken=${requestToken}`,
+        "timeout": 2000
     }
     try{
         return await utils.httpRequest(options);
@@ -534,7 +562,8 @@ app.post('/order/:id',
                     "method": 'POST',
                     "hostname": hostname,
                     "port": port,
-                    "path": path
+                    "path": path,
+                    "timeout": 2000
                 }
 
                 utils.httpRequest(options,payload)
@@ -542,6 +571,10 @@ app.post('/order/:id',
                     var orderConfirmation = buffer.toString();
                     utils.logLocal(`\tGot POST respponse http://${options.hostname}:${options.port}${options.path} ${orderConfirmation}`);
                     res.status(200).send(orderConfirmation);
+                })
+                .on('timeout', () => {
+                    utils.log(`Timeout order http POST request`, requestToken);
+                    reject(`Timeout order http POST request`);
                 })
                 .catch( (error) => {
                     utils.log("Problem with Order service: " + id + " Error: " + error.message, requestToken);
