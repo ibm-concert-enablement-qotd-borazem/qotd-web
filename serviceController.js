@@ -2,6 +2,7 @@ const utils = require('./utils.js');
 const metrics = require('./metrics.js');
 const loggerEngine = require('./logger.js');
 const fs = require('fs');
+const special = require('./special.js');
 
 function startService() {
     appService = serviceController.listen(serviceController.get('port'), '0.0.0.0', function () {
@@ -31,8 +32,12 @@ serviceController.post('/reset', function(req,res){
 });
 
 serviceController.post('/app/:action', function(req,res){
+    var status = 200;
+    var msg = {"msg":"OK"};
+
     var action = req.params.action;
     utils.logLocal(`App action: ${action}`);
+
     switch( action ){
         case 'crash': {
             crash();
@@ -60,9 +65,20 @@ serviceController.post('/app/:action', function(req,res){
         case 'reset': {
             metrics.resetToFactorySettings();
             loggerEngine.resetToFactorySettings();
+            break;
+        }
+
+        case 'special': {
+            try{
+                msg = special.action(req.body);
+            } catch( error ) {
+                status = 500;
+                msg = error;
+            }
+            break;
         }
     }
-    res.send('OK');
+    res.status(status).json(msg);
 });
 
 

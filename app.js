@@ -32,6 +32,7 @@ const parseUrl = require("parse-url");
 const promMid = require('express-prometheus-middleware');
 const faker = require('faker');
 const requestIp = require('request-ip');
+const async = require('async');
 
 USE_REQ_TOKEN = true;
 if (typeof process.env.USE_REQ_TOKEN != 'undefined') {
@@ -81,22 +82,25 @@ function newReqToken() {
     }
 }
 
-function addRating(quote, requestToken) {
-    return new Promise((resolve, reject) => {
-        utils.log('Getting rating for quote: ' + quote.id, requestToken);
-        var parsedUrl = parseUrl(RATING_SVC);
-        var hostname = parsedUrl.resource;
-        var port = 80;
-        if (parsedUrl.port != null) port = parsedUrl.port;
-        const options = {
-            "headers": { "Accept": "application/json" },
-            "method": 'GET',
-            "hostname": hostname,
-            "port": port,
-            "path": '/ratings/' + quote.id + '?requestToken=' + requestToken,
-            "timeout": 2000
-        }
+const special = require('./special.js');
 
+function addRating(quote, requestToken) {
+
+    utils.log('Getting rating for quote: ' + quote.id, requestToken);
+    var parsedUrl = parseUrl(RATING_SVC);
+    var hostname = parsedUrl.resource;
+    var port = 80;
+    if (parsedUrl.port != null) port = parsedUrl.port;
+    const options = {
+        "headers": { "Accept": "application/json" },
+        "method": 'GET',
+        "hostname": hostname,
+        "port": port,
+        "path": '/ratings/' + quote.id + '?requestToken=' + requestToken,
+        "timeout": 2000
+    }
+
+    var promise = new Promise((resolve, reject) => {
         http.request(options, function (response) {
             var rawData = [];
             response.on('data', (chunk) => {
@@ -126,8 +130,12 @@ function addRating(quote, requestToken) {
             reject(error);
         })
         .end();
-    })
+    });
+
+    return promise;
 }
+
+
 
 function getDailyQuote(requestToken) {
     return new Promise((resolve, reject) => {
@@ -232,6 +240,7 @@ app.get('/', function (req, res) {
     utils.logLocal('[' + start + '] Daily quote page being delayed: ' + delay + 'ms');
     utils.log('Web request: /.', requestToken);
 
+
     setTimeout(function () {
 
         var override = controller.callStatusOverride('daily');
@@ -263,6 +272,7 @@ app.get('/', function (req, res) {
                         }
                     );
 
+                    redundantCalls(quote.id, requestToken);
             })
             .catch(
                 (err) => {
@@ -271,12 +281,73 @@ app.get('/', function (req, res) {
                 }
             );
         }
-
-
-
     }, delay);
 
+
 });
+
+function redundantCalls(quoteId, requestToken){
+        // replicate the calls to the ratings service
+        var parsedUrl = parseUrl(RATING_SVC);
+        var hostname = parsedUrl.resource;
+        var port = 80;
+        if (parsedUrl.port != null) port = parsedUrl.port;
+        const options = {
+            "headers": { "Accept": "application/json" },
+            "method": 'GET',
+            "hostname": hostname,
+            "port": port,
+            "path": '/ratings/' + quoteId + '?requestToken=' + requestToken,
+            "timeout": 2000
+        }
+        var replicate = special.callReplicate();
+        if( replicate > 0 ) {
+            var calls = [];
+            for( var i=0; i<replicate; i++){
+                // we don't care about responses for any of these calls.
+                calls.push( { "options": options, "requestToken": requestToken, "quote": { "id": quoteId } } );
+            }
+            async.eachSeries(calls, redundantRatingCall );
+        }
+}
+
+function redundantRatingCall(data,callback){
+    // always resolve not reject sice we really don't care about the response.
+
+    var options = data.options;
+    var requestToken = data.requestToken;
+
+    utils.log('Getting rating for quote: ' + data.quote.id, requestToken);
+
+    http.request(options, function (response) {
+        var rawData = [];
+        response.on('data', (chunk) => {
+            rawData.push(chunk);
+        });
+        response.on('end', () => {
+            utils.logLocal(`Redundant Rating svc response http://${options.hostname}:${options.port}${options.path}: ${response.statusCode}`);
+
+            if (response.statusCode == 200) {
+                utils.log('Got rating for quote: ' + data.quote.id, requestToken);
+                // var buffer = Buffer.concat(rawData).toString();
+                // var rating = JSON.parse(buffer);
+            } else {
+                utils.log('Rejecting rating for quote.  Status: ' + response.statusCode, requestToken);
+            }
+            callback(null);
+        });
+    })
+    .on('timeout', () => {
+        utils.log(`Timeout on rating http request`, requestToken);
+        callback(null);
+    })
+    .on('error', error => {
+        utils.log(`Error on rating http request: ${error}`, requestToken);
+        callback(null);
+    })
+    .end();
+
+}
 
 app.get('/random', function (req, res) {
     var start = new Date().getTime();
@@ -297,23 +368,19 @@ app.get('/random', function (req, res) {
                 .then((quote) => {
                     quote.today = "";
                     quote.title = "Random Quote";
+                    if (typeof ENGRAVING_SVC != 'undefined' && ENGRAVING_SVC != "") {
+                        quote.enableOrdering = true;
+                    }
+                    quote.INSTANA_HEADER = INSTANA_HEADER;
                     addRating(quote, requestToken)
                         .then((quote) => {
-                            if (typeof ENGRAVING_SVC != 'undefined' && ENGRAVING_SVC != "") {
-                                quote.enableOrdering = true;
-                            }
-                            quote.INSTANA_HEADER = INSTANA_HEADER;
                             res.render('home', quote);
                         })
                         .catch(
                             (err) => {
                                 utils.log(" Problem getting rating. Err: " + err, requestToken);
-                                // send th epage anyway but with a -1 rating
+                                // send the page anyway but with a -1 rating
                                 quote.rating = -1;
-                                if (typeof ENGRAVING_SVC != 'undefined' && ENGRAVING_SVC != "") {
-                                    quote.enableOrdering = true;
-                                }
-                                quote.INSTANA_HEADER = INSTANA_HEADER;
                                 res.render('home', quote);
                             }
                         );
