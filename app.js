@@ -97,7 +97,8 @@ function addRating(quote, requestToken) {
         "hostname": hostname,
         "port": port,
         "path": '/ratings/' + quote.id + '?requestToken=' + requestToken,
-        "timeout": 2000
+        "timeout": 2000,
+        "requestToken": requestToken
     }
 
     var promise = new Promise((resolve, reject) => {
@@ -151,7 +152,8 @@ function getDailyQuote(requestToken) {
             "hostname": hostname,
             "port": port,
             "path": '/daily?requestToken=' + requestToken,
-            "timeout": 2000
+            "timeout": 2000,
+            "requestToken": requestToken
         }
 
         http.request(options, function (response) {
@@ -197,7 +199,8 @@ function getRandomQuote(requestToken) {
             "hostname": hostname,
             "port": port,
             "path": '/random?requestToken=' + requestToken,
-            "timeout": 2000
+            "timeout": 2000,
+            "requestToken": requestToken
         }
 
         http.request(options, function (response) {
@@ -298,7 +301,8 @@ function redundantCalls(quoteId, requestToken){
             "hostname": hostname,
             "port": port,
             "path": '/ratings/' + quoteId + '?requestToken=' + requestToken,
-            "timeout": 2000
+            "timeout": 2000,
+            "requestToken": requestToken
         }
         var replicate = special.callReplicate();
         if( replicate > 0 ) {
@@ -315,7 +319,7 @@ function redundantRatingCall(data,callback){
     // always resolve not reject sice we really don't care about the response.
 
     var options = data.options;
-    var requestToken = data.requestToken;
+    var requestToken = options.requestToken;
 
     utils.log('Getting rating for quote: ' + data.quote.id, requestToken);
 
@@ -424,7 +428,8 @@ app.get('/author/:id', function (req, res) {
                 "hostname": hostname,
                 "port": port,
                 "path": '/authors/' + id + '?requestToken=' + requestToken,
-                "timeout": 2000
+                "timeout": 2000,
+                "requestToken": requestToken
             }
 
             utils.httpRequest(options)
@@ -469,7 +474,8 @@ app.get('/images/:id',
                     "hostname": hostname,
                     "port": port,
                     "path": '/images/' + id + '?requestToken=' + requestToken,
-                    "timeout": 2000
+                    "timeout": 2000,
+                    "requestToken": requestToken
                 }
 
                 utils.httpRequest(options)
@@ -515,7 +521,8 @@ app.get('/pdf/:id',
                     "hostname": hostname,
                     "port": port,
                     "path": '/pdf/' + id + '?requestToken=' + requestToken,
-                    "timeout": 2000
+                    "timeout": 2000,
+                    "requestToken": requestToken
                 }
 
                 utils.httpRequest(options)
@@ -578,7 +585,8 @@ async function getQuote(id, requestToken) {
         "hostname": hostname,
         "port": port,
         "path": `/quotes/${id}?requestToken=${requestToken}`,
-        "timeout": 2000
+        "timeout": 2000,
+        "requestToken": requestToken
     }
     try{
         return await utils.httpRequest(options);
