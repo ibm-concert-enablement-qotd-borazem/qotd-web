@@ -46,7 +46,7 @@ PDF_SVC = process.env.PDF_SVC;
 ENGRAVING_SVC = process.env.ENGRAVING_SVC;
 HIDE_IMAGE = false;
 if( typeof process.env.HIDE_IMAGE != "undefined" ){
-    HIDE_IMAGE = (process.env.HIDE_IMAGE == "undefined");
+    HIDE_IMAGE = (typeof process.env.HIDE_IMAGE == "undefined");
 }
 
 app = express();
