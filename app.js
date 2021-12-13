@@ -534,8 +534,8 @@ app.get('/pdf/:id',
                     utils.log("PDF Document provided.", requestToken);
                 })
                 .catch( (error) => {
-                    utils.log("Problem getting image " + id + " Error: " + JSON.stringify(error), requestToken);
-                    res.status(error.code).send("Image " + id + " not found");
+                    utils.log("Problem getting pdf " + id + " Error: " + error.message, requestToken);
+                    res.status(500).send("PDF " + id + " not found. Internal status code: "+error.code);
                 });
             }
 
@@ -642,8 +642,8 @@ app.post('/order/:id',
                     res.status(200).send(orderConfirmation);
                 })
                 .catch( (error) => {
-                    utils.log("Problem with Order service: " + id + " Error: " + error.message, requestToken);
-                    res.status(error.code).send("Problem with Order service: " + id + " Error: " + error.message);
+                    utils.log("Problem with Order " + id + " Error: " + error.message, requestToken);
+                    res.status(500).send("Order " + id + " problem. Internal status code: "+error.code);
                 });    
             }
 
