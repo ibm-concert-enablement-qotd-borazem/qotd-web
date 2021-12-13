@@ -488,7 +488,7 @@ app.get('/images/:id',
                 })
                 .catch( (error) => {
                     utils.log("Problem getting image " + id + " Error: " + error.message, requestToken);
-                    res.status(error.code).send("Image " + id + " not found");
+                    res.status(500).send("Image " + id + " not found. Internal status code: "+error.code);
                 });
 
             }

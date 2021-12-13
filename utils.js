@@ -171,7 +171,11 @@ function httpRequest(options,payload) {
 
         httpReq.on('timeout', () => {
             log(`Timeout http request ${options.method} http://${options.hostname}:${options.port}${options.path}`, options.requestToken);
-            reject(`Timeout http request ${options.method} http://${options.hostname}:${options.port}${options.path}`);
+            var failure = {
+                "code": "timeout",
+                "message": `Timeout http request ${options.method} http://${options.hostname}:${options.port}${options.path}`
+            }
+            reject(failure);
         })
 
         if( typeof payload != 'undefined' && payload.length>0 ) {
