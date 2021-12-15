@@ -224,7 +224,7 @@ exports.removeLogger = removeLogger;
 
 function genLog(logger) {
     var fields = logger.fields;
-    if( typeof fields == 'undefined' ) return template;
+    if( typeof fields == 'undefined' ) return logger.template;
 
     // otherwise lets make up some stuff
     var fieldNames = Object.keys(fields);
