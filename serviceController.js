@@ -28,6 +28,7 @@ function crash() {
 serviceController.post('/reset', function(req,res){
     metrics.resetToFactorySettings();
     loggerEngine.resetToFactorySettings();
+    initializeCallOverrides();
     res.send("OK");
 });
 
@@ -65,6 +66,7 @@ serviceController.post('/app/:action', function(req,res){
         case 'reset': {
             metrics.resetToFactorySettings();
             loggerEngine.resetToFactorySettings();
+            initializeCallOverrides();
             break;
         }
 
