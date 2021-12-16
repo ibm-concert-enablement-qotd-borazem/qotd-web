@@ -129,8 +129,8 @@ function handleOverride(res, override, requestToken) {
         payload = override.payload;
     } 
     res.status(override.code).send(payload);
-    if( typeof override.log != undefined ) {
-        var log = loggerEngine.genLog(override.log);
+    if( typeof override.template != 'undefined' ) {
+        var log = loggerEngine.genLog(override);
         utils.log(log,requestToken);
     }
 }
@@ -240,11 +240,13 @@ serviceController.delete('/callDistribution/:pathId', function(req,res){
 
 function initializeCallOverrides(){
 
-    try{
-        var data = fs.readFileSync('./config/overrides.json');
-        _callStatusDistribution = JSON.parse(data);
-    } catch( error ) {
-        utils.log("Error reading call overrides: " + error);
+    if( fs.existsSync('./config/overrides.json') ) {
+        try{
+            var data = fs.readFileSync('./config/overrides.json');
+            _callStatusDistribution = JSON.parse(data);    
+        } catch( error ) {
+            utils.log("Error reading call overrides: " + error);
+        }
     }
 
 }
