@@ -247,6 +247,8 @@ function initializeCallOverrides(){
         } catch( error ) {
             utils.log("Error reading call overrides: " + error);
         }
+    } else {
+        _callStatusDistribution = {};
     }
 
 }
