@@ -103,12 +103,13 @@
                 "street": street,
                 "city": city,
                 "state": state,
-                "zip": zip
+                "zip": zip,
+                "quote_id": "<%=quote_id%>"
             }
 
             $.ajax({
                 type: 'POST',
-                url: '/order/<%=id%>?requestToken=<%=token%>',
+                url: '/order?requestToken=<%=token%>',
                 contentType: 'application/json',
                 data: JSON.stringify(order), 
                 success: confirmOrder,

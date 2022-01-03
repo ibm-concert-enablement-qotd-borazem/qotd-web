@@ -1,12 +1,10 @@
 stages:
   - build
-  - tag
   - promote
 
 variables:
-  BUILD_IMAGE: ${CI_REGISTRY}/${CI_PROJECT_PATH}:build-${CI_PIPELINE_ID}
-  LATEST_IMAGE: ${CI_REGISTRY}/${CI_PROJECT_PATH}:latest
-  TAG_IMAGE: ${CI_REGISTRY}/${CI_PROJECT_PATH}:${TAG}
+  BUILD_IMAGE: ${CI_REGISTRY}/${CI_PROJECT_PATH}/${CI_COMMIT_BRANCH}:build-${CI_PIPELINE_ID}
+  LATEST_IMAGE: ${CI_REGISTRY}/${CI_PROJECT_PATH}/${CI_COMMIT_BRANCH}:latest
 
 build:
   # Official docker image.
@@ -20,18 +18,6 @@ build:
     - echo "build-${CI_PIPELINE_ID}" > build.txt
     - docker build --pull -t "$BUILD_IMAGE" .
     - docker push "$BUILD_IMAGE"
-
-tag:  
-  stage: tag
-  image: docker:18-git
-  services:
-    - docker:dind
-  before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-  script:
-    - docker pull "$BUILD_IMAGE"
-    - docker tag "$BUILD_IMAGE" "$TAG_IMAGE"
-    - docker push "$TAG_IMAGE"
 
 promote_prod:  
   stage: promote

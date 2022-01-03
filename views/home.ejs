@@ -12,7 +12,9 @@
     <link rel="stylesheet" href="/css/home.css">
     <title>Quote of the Day</title>
 
-    <%- INSTANA_HEADER %>
+    <% if( typeof quoteDetails.INSTANA_HEADER != 'undefined') { %>
+        <%- quoteDetails.INSTANA_HEADER %>
+    <% } %>
 
 </head>
 
@@ -34,25 +36,25 @@
         <section class="jumbotron text-center">
             <div class="container">
                 <h1 class="jumbotron-heading">
-                    <%= title %>
+                    <%= quoteDetails.title %>
                 </h1>
                 <h5>
-                    <%= today %>
+                    <%= quoteDetails.today %>
                 </h5>
                 <p class="lead text-muted">
                     <i id="quote">
-                        <%=quote%>
+                        <%=quoteDetails.quote%>
                     </i>
                 </p>
-                <p>- <a id="author_link" href="/author/<%=author_id%>">
-                        <%=author%>
+                <p>- <a id="author_link" href="/author/<%=quoteDetails.author_id%>">
+                        <%=quoteDetails.author%>
                     </a></p>
-                <p>[<%=genre%>]</p>
+                <p>[<%=quoteDetails.genre%>]</p>
                 <p>
-                    <% if( rating < 0 || rating> 10) { %>
+                    <% if( quoteDetails.rating < 0 || quoteDetails.rating> 10) { %>
                         (Rating service not currently available)
                     <% } else { %>
-                        <img id="ratingImg" src="/images/<%=rating%>star.png">
+                        <img id="ratingImg" src="/images/<%=quoteDetails.rating%>star.png">
                     <% } %>
                 </p>
             </div>
@@ -60,9 +62,9 @@
 
         <div class="row" style="padding-top: 100px;">
             <div class="container" style="text-align: left;">
-                <a id="pdf_link" href="/pdf/<%=id%>"><button id="btnPDF" class="btn btn-outline-dark">PDF &nbsp; <img src="/images/pdf.png" width="16"></button></a>
-            <% if( typeof enableOrdering != 'undefined' && enableOrdering ) { %>
-                <a id="order_link" href="/order/<%=id%>" style="text-align: right;"><button id="btnOrder" class="btn btn-outline-dark float-right">Order Engraving</button></a>
+                <a id="pdf_link" href="/pdf/<%=quoteDetails.id%>"><button id="btnPDF" class="btn btn-outline-dark">PDF &nbsp; <img src="/images/pdf.png" width="16"></button></a>
+            <% if( typeof quoteDetails.enableOrdering != 'undefined' && quoteDetails.enableOrdering ) { %>
+                <a id="order_link" href="/order/<%=quoteDetails.id%>" style="text-align: right;"><button id="btnOrder" class="btn btn-outline-dark float-right">Order Engraving</button></a>
 
             <% } %>
         </div>
