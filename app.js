@@ -4,7 +4,6 @@ if (process.env.ENABLE_INSTANA == "true") {
 }
 const express = require('express');
 const fs = require('fs');
-const promMid = require('express-prometheus-middleware');
 const requestIp = require('request-ip');
 const moment = require('moment');
 const parseUrl = require('parse-url');
@@ -39,7 +38,6 @@ app.set('port', 3000);
 
 app.enable('trust proxy');
 
-app.use(promMid());
 app.use(express.static(__dirname + '/public'));
 app.use(express.json());
 app.use(requestIp.mw());
