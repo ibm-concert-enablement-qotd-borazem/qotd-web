@@ -299,7 +299,7 @@ function authorHandler(req,res){
     })
     .catch( (error) => {
         utils.log("Problem getting author bio.  " + error.message, requestToken);
-        res.status(error.code).send("Problem getting author bio.");
+        res.status(500).send("Problem getting author bio.");
     });
 }
 
@@ -334,7 +334,7 @@ function imageHandler(req,res){
     })
     .catch( (error) => {
         utils.log("Problem getting author image.  " + error.message, requestToken, "WARN");
-        res.status(error.code).send("Problem getting author image.");
+        res.status(500).send("Problem getting author image.");
     });
 }
 
@@ -370,7 +370,7 @@ function pdfHandler(req,res){
     })
     .catch( (error) => {
         utils.log("Problem building pdf.  " + error.message, requestToken, "WARN");
-        res.status(error.code).send("Problem building pdf.");
+        res.status(500).send("Problem building pdf.");
     });
 }
 
