@@ -128,7 +128,7 @@ function getQuote(id,requestToken){
                 "error": 'Rejecting quote service.  Status: ' + error.statusCode,
                 "resource": `http://${options.hostname}:${options.port}${options.path}`
             }
-            reject.json(errObj);
+            reject(errObj);
         });
     });
 }
