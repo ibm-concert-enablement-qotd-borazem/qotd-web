@@ -321,7 +321,7 @@ function imageHandler(req,res){
         "hostname": hostname,
         "port": port,
         "path": '/images/' + id + '?requestToken=' + requestToken,
-        "timeout": 2000,
+        "timeout": 2500,
         "requestToken": requestToken
     }
 
