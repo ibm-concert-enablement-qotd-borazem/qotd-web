@@ -310,7 +310,7 @@ function imageHandler(req,res){
     var id = req.params.id;
     utils.log('Author image request: /images/' + id + ' .', requestToken, "INFO");
 
-    var parsedUrl = parseUrl(process.env.IMAGE_SVC);
+    var parsedUrl = parseUrl(process.env.AUTHOR_SVC);
     var hostname = parsedUrl.resource;
     var port = 80;
     if (parsedUrl.port != null) port = parsedUrl.port;
