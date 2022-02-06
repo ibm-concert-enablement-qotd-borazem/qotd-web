@@ -51,7 +51,7 @@
                     </a></p>
                 <p>[<%=quoteDetails.genre%>]</p>
                 <p>
-                    <% if( quoteDetails.rating < 0 || quoteDetails.rating> 10) { %>
+                    <% if( !Number.isInteger(quoteDetails.rating) ) { %>
                         (Rating service not currently available)
                     <% } else { %>
                         <img id="ratingImg" src="/images/<%=quoteDetails.rating%>star.png">
