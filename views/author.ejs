@@ -17,7 +17,9 @@
     </style>
     <title>Quote of the Day Author Bio</title>
 
-    <%- INSTANA_HEADER %>
+    <% if( typeof INSTANA_HEADER != 'undefined' && INSTANA_HEADER != null) { %>
+        <%- INSTANA_HEADER %>
+    <% } %>
 
 </head>
 
@@ -35,11 +37,11 @@
             <div class="row" style="padding-top: 2em;">
                 <% if( !hideImage ) {  %>
                     <div class="col-md-3">
-                        <img id="author_image" src="/images/<%=author_id%>" class="img-fluid">
+                        <img id="author_image" src="/images/<%=data.author_id%>" class="img-fluid">
                     </div>
                 <% } %>
                 <div id="divBio" class="col-md-9">
-                    <%- bio %>
+                    <%- data.bio %>
                 </div>
             </div>
 
@@ -55,6 +57,14 @@
 
     </main>
 
+    <% if( typeof branding != 'undefined'  && branding != null ) { %>
+        <div class="container"></div>
+            <hr/>
+            <footer class="container">
+                <p><%-branding%></p>
+            </footer>
+        </div>
+    <% } %>
 
 </body>
 

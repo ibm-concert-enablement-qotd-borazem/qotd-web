@@ -27,6 +27,11 @@ if( typeof process.env.HIDE_IMAGE != "undefined" ){
     HIDE_IMAGE = (typeof process.env.HIDE_IMAGE == "undefined");
 }
 
+BRANDING=null;
+if( typeof process.env.BRANDING != "undefined" ){
+    BRANDING = process.env.BRANDING;
+}
+
 //================================================================================================
 // Express setup
 
@@ -179,7 +184,6 @@ function handleDaily(req,res){
         "id": quote_id,
         "today": now.format("dddd, MMMM Do YYYY"),
         "title": "Quote of the Day",
-        "INSTANA_HEADER": INSTANA_HEADER,
         "enableOrdering": ENABLE_ENGRAVING
     }
 
@@ -194,12 +198,12 @@ function handleDaily(req,res){
         .then( (rating) => {
             quoteDetails.rating = rating.rating;
             utils.log("Obtained rating for quote: "+quote_id+".", requestToken, "INFO");
-            res.render('home', { "quoteDetails": quoteDetails });
+            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": INSTANA_HEADER });
         })
         .catch( error => {
             quoteDetails.rating = "Rating service currently unavailable.";
             utils.log("Error obtaining rating for quote "+quote_id+" Error: "+error, requestToken, "WARN");
-            res.render('home', { "quoteDetails": quoteDetails });
+            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": INSTANA_HEADER });
         })
 
     })
@@ -210,7 +214,7 @@ function handleDaily(req,res){
         quoteDetails.author_id = "";
         quoteDetails.rating = "";
         utils.log("Error obtaining quote: " + quote_id + ". " + error, requestToken, "WARN");
-        res.render('home', { "quoteDetails": quoteDetails });
+        res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": INSTANA_HEADER });
     });
 
 }
@@ -228,7 +232,6 @@ function handleRandom(req,res){
         "id": quote_id,
         "today": "Random Quote",
         "title": "Quote of the Day",
-        "INSTANA_HEADER": INSTANA_HEADER,
         "enableOrdering": ENABLE_ENGRAVING
     }
 
@@ -243,12 +246,12 @@ function handleRandom(req,res){
         .then( (rating) => {
             quoteDetails.rating = rating.rating;
             utils.log("Obtained rating for quote: "+quote_id+".", requestToken, "INFO");
-            res.render('home', { "quoteDetails": quoteDetails });
+            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": INSTANA_HEADER });
         })
         .catch( error => {
             quoteDetails.rating = "Rating service currently unavailable.";
             utils.log("Error obtaining rating for quote "+quote_id+" Error: "+error, requestToken, "WARN");
-            res.render('home', { "quoteDetails": quoteDetails });
+            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": INSTANA_HEADER });
         })
 
     })
@@ -259,7 +262,7 @@ function handleRandom(req,res){
         quoteDetails.author_id = "";
         quoteDetails.rating = "";
         utils.log("Error obtaining quote: "+ quote_id + ". " + error, requestToken, "WARN");
-        res.render('home', { "quoteDetails": quoteDetails });
+        res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": INSTANA_HEADER });
     });
 
 }
@@ -291,9 +294,7 @@ function authorHandler(req,res){
     utils.httpRequest(options)
     .then( (bio) => {
         utils.log("Author bio received.  Author id: " + id, requestToken);
-        bio.INSTANA_HEADER = INSTANA_HEADER;
-        bio.hideImage = HIDE_IMAGE;
-        res.render('author', bio);
+        res.render('author', { "data" : bio, "hideImage": HIDE_IMAGE, "branding" : BRANDING, "INSTANA_HEADER": INSTANA_HEADER } );
     })
     .catch( (error) => {
         utils.log("Problem getting author bio.  " + error.message, requestToken);
@@ -392,7 +393,7 @@ function getOrderHandler(req,res){
     }
     order.zip = faker.address.zipCodeByState(order.state);
     order.INSTANA_HEADER = INSTANA_HEADER;
-    res.render('order', order);
+    res.render('order', { "order": order, "branding" : BRANDING } );
 }
 
 serviceManager.endpointGet('/order/:id', "Getting engraving order details.", getOrderHandler);

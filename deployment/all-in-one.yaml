@@ -1,68 +1,3 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: qotd-web-call-distribution-overrides
-  namespace: qotd
-data:
-  overides.json: { }  # this is just a placeholder
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: qotd-web-loggers
-  namespace: qotd
-data:
-  incident.json: |
-    {
-        "id": "incident",
-        "name": "Simulated incident record",
-        "template": "Web service sisk status notifier: code=D{{v1}} dstepid={{v2}} vd={{user}}",
-        "fields": {
-            "v1": {
-                "type": "randomInt",
-                "min": 1000,
-                "max": 9999
-            },
-            "v2": {
-                "type": "randomInt",
-                "min": 1000,
-                "max": 9999
-            },
-            "user": {
-                "type": "userName"
-            }
-        },
-        "repeat": {
-            "mean": 13000,
-            "stdev": 200,
-            "min": 11000,
-            "max": 15000
-        }
-    }
-
-  heartbeat.json: |
-    {
-      "id": "heartbeat",
-      "name": "A regular log message indicating the health with a simple status.",
-      "template": "Web pulse status: {{STATUS}}",
-      "fields": {
-          "STATUS": {
-              "type": "pickWeighted",
-              "options": [
-                  { "value": "GOOD", "weight": 8 },
-                  { "value": "POOR", "weight": 2 }
-              ]            
-          }
-      },
-      "repeat": {
-          "mean": 4000,
-          "stdev": 1000,
-          "min": 3000,
-          "max": 5000
-      }
-    }
-
----
 kind: Deployment
 apiVersion: apps/v1
 metadata:
@@ -72,7 +7,7 @@ metadata:
     app: qotd
     tier: web
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: qotd-web
@@ -81,55 +16,59 @@ spec:
       labels:
         app: qotd-web
     spec:
-      volumes:
-        - name: qotd-web-loggers
-          configMap:
-            name: qotd-web-loggers
-            defaultMode: 420
-        - name: qotd-web-call-distribution-overrides
-          configMap:
-            name: qotd-web-call-distribution-overrides
-            defaultMode: 420
       restartPolicy: Always
       containers:
         - name: qotd-web
-          image: registry.gitlab.com/quote-of-the-day/qotd-web:latest
+          image: registry.gitlab.com/quote-of-the-day/qotd-web/v4.0.0:latest
           imagePullPolicy: Always
-          volumeMounts:
-            - name: qotd-web-loggers
-              readOnly: true
-              mountPath: /app/loggers
-            - name: qotd-web-call-distribution-overrides
-              readOnly: true
-              mountPath: /app/config
           ports:
             - name: http
               containerPort: 3000
               protocol: TCP
-            - name: svc
-              containerPort: 8080
-              protocol: TCP
           env:
-            - name: LOCAL_LOGGING
-              value: "false"
+            - name: LOG_LEVEL
+              value: "INFO"
             - name: ENABLE_INSTANA
-              value: "true"
+              value: "false"
+            - name: INSTANA_REPORTING_URL
+              value: ""
+            - name: INSTANA_ENUM_MIN_JS_URL
+              value: ""
+            - name: INSTANA_KEY
+              value: ""
+            - name: ANOMALY_GENERATOR_URL
+              value: "http://qotd-usecase-{{ .Values.loadNamespace }}.{{ .Values.host }}/services/web"
             - name: QUOTE_SVC
               value: "qotd-quote.qotd.svc.cluster.local:3001"
             - name: AUTHOR_SVC
               value: "qotd-author.qotd.svc.cluster.local:3002"
+            - name: IMAGE_SVC
+              value: "qotd-image.qotd.svc.cluster.local:3003"
             - name: RATING_SVC
               value: "qotd-rating.qotd.svc.cluster.local:3004"
             - name: PDF_SVC
               value: "qotd-pdf.qotd.svc.cluster.local:3005"
             - name: ENGRAVING_SVC
-              value: "qotd-pdf.qotd.svc.cluster.local:3006"
+              value: "qotd-engraving.qotd.svc.cluster.local:3006"
+
           livenessProbe:
             httpGet:
               path: /health
               port: 3000
-            initialDelaySeconds: 10
-            periodSeconds: 5
+            initialDelaySeconds: 60
+            timeoutSeconds: 20
+            periodSeconds: 60
+            successThreshold: 1
+            failureThreshold: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            timeoutSeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 5
           resources:
             requests:
               cpu: "50m"
@@ -156,24 +95,6 @@ spec:
   selector:
     app: qotd-web
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: qotd-web-svc
-  namespace: qotd
-  labels:
-    app: qotd
-    tier: web
-spec:
-  type: ClusterIP
-  ports:
-    - port: 8080
-      targetPort: 8080
-      protocol: TCP
-      name: svc
-  selector:
-    app: qotd-web
----
 kind: Route
 apiVersion: route.openshift.io/v1
 metadata:
@@ -183,7 +104,6 @@ metadata:
     app: qotd
     tier: web
 spec:
-  subdomain: ''
   to:
     kind: Service
     name: qotd-web
@@ -191,22 +111,3 @@ spec:
   port:
     targetPort: http
   wildcardPolicy: None
----
-kind: Route
-apiVersion: route.openshift.io/v1
-metadata:
-  name: qotd-web-svc
-  namespace: qotd
-  labels:
-    app: qotd
-    tier: web
-spec:
-  subdomain: ''
-  to:
-    kind: Service
-    name: qotd-web-svc
-    weight: 100
-  port:
-    targetPort: svc
-  wildcardPolicy: None
----
