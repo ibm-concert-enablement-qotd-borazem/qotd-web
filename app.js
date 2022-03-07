@@ -28,7 +28,7 @@ if( typeof process.env.HIDE_IMAGE != "undefined" ){
 }
 
 BRANDING=null;
-if( typeof process.env.BRANDING != "undefined" ){
+if( typeof process.env.BRANDING == "string" && process.env.BRANDING.length>0  ){
     BRANDING = process.env.BRANDING;
 }
 
