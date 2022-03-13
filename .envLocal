@@ -1,0 +1,11 @@
+LOG_LEVEL=INFO
+ANOMALY_GENERATOR_URL=http://localhost:3012/services/web
+POLLING_FREQUENCY=5000
+ENABLE_INSTANA=false
+QUOTE_SVC=http://localhost:3001
+AUTHOR_SVC=http://localhost:3002
+IMAGE_SVC=http://localhost:3003
+RATING_SVC=http://localhost:3004
+PDF_SVC=http://localhost:3005
+ENGRAVING_SVC=http://localhost:3006
+SHOW_IMAGE=true
