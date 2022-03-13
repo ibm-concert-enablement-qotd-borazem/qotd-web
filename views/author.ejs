@@ -64,15 +64,15 @@
 
         </div>
 
+        <% if( typeof branding != 'undefined'  && branding != null ) { %>
+            <div class="container">
+                <hr/>
+                <p><%-branding%></p>
+            </div>
+        <% } %>
 
     </main>
 
-    <% if( typeof branding != 'undefined'  && branding != null ) { %>
-        <div class="container"></div>
-            <hr/>
-            <%-branding%>
-        </div>
-    <% } %>
 
 </body>
 

@@ -77,17 +77,19 @@
                 <a id="order_link" href="/order/<%=quoteDetails.id%>" style="text-align: right;"><button id="btnOrder" class="btn btn-outline-dark float-right">Order Engraving</button></a>
 
             <% } %>
+            </div>
         </div>
-        </div>
+
+        <% if( typeof branding != 'undefined'  && branding != null ) { %>
+            <div class="container">
+                <hr/>
+                <p><%-branding%></p>
+            </div>
+        <% } %>
 
     </main>
 
-    <% if( typeof branding != 'undefined'  && branding != null ) { %>
-        <div class="container"></div>
-            <hr/>
-            <p><%-branding%></p>
-        </div>
-    <% } %>
+
 </body>
 
 </html>
