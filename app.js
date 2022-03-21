@@ -57,7 +57,7 @@ const anomalyConfig = {
     "logLevel": process.env.LOG_LEVEL
 }
 
-if( typeof process.env.POLLING_FREQUENCY != 'undefined' && Number.isInteger(process.env.POLLING_FREQUENCY) ) {
+if( typeof process.env.POLLING_FREQUENCY != 'undefined' && Number.parseInt(process.env.POLLING_FREQUENCY) ) {
     anomalyConfig.pollingFrequency = parseInt(process.env.POLLING_FREQUENCY);
 } else {
     anomalyConfig.pollingFrequency = 5000;
