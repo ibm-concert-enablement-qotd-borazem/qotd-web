@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "node",
+            "type": "pwa-node",
             "request": "launch",
             "name": "Server",
             "skipFiles": [
@@ -14,7 +14,7 @@
             "program": "${workspaceFolder}/app.js",
             "envFile": "${workspaceFolder}/.env",
             "runtimeArgs": ["--expose-gc"],
-            "runtimeExecutable": "node"
+            "runtimeExecutable": "/Users/jconallen/.nvm/versions/node/v14.16.0/bin/node"
         }
     ]
 }

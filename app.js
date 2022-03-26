@@ -117,7 +117,8 @@ function getQuote(id,requestToken){
             "method": 'GET',
             "hostname": hostname,
             "port": port,
-            "path": '/quotes/' + id + '?requestToken=' + requestToken
+            "path": '/quotes/' + id + '?requestToken=' + requestToken,
+            "timeout": 5000
         }
 
         utils.httpRequest(options)
@@ -151,7 +152,8 @@ function getRating(id,requestToken){
             "method": 'GET',
             "hostname": hostname,
             "port": port,
-            "path": '/ratings/' + id + '?requestToken=' + requestToken
+            "path": '/ratings/' + id + '?requestToken=' + requestToken,
+            "timeout": 5000
         }
 
         utils.httpRequest(options)
@@ -287,7 +289,7 @@ function authorHandler(req,res){
         "hostname": hostname,
         "port": port,
         "path": '/authors/' + id + '?requestToken=' + requestToken,
-        "timeout": 2000,
+        "timeout": 5000,
         "requestToken": requestToken
     }
 
@@ -322,7 +324,7 @@ function imageHandler(req,res){
         "hostname": hostname,
         "port": port,
         "path": '/images/' + id + '?requestToken=' + requestToken,
-        "timeout": 2500,
+        "timeout": 5000,
         "requestToken": requestToken
     }
 
@@ -358,7 +360,7 @@ function pdfHandler(req,res){
         "hostname": hostname,
         "port": port,
         "path": '/pdf/' + id + '?requestToken=' + requestToken,
-        "timeout": 2000,
+        "timeout": 5000,
         "requestToken": requestToken
     }
 
@@ -426,7 +428,7 @@ async function postOrderHandler(req,res){
         "hostname": hostname,
         "port": port,
         "path": path,
-        "timeout": 2000,
+        "timeout": 5000,
         "requestToken": requestToken
     }
 
