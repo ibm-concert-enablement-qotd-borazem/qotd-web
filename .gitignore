@@ -5,3 +5,4 @@ z_*
 .env
 package-lock.json
 .vscode/launch.json
+.envQotd

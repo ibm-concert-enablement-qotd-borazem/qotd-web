@@ -1,7 +1,8 @@
+require('@instana/collector')();
 require('dotenv').config();
-if (process.env.ENABLE_INSTANA == "true") {
-    require('@instana/collector')();
-}
+// if (process.env.ENABLE_INSTANA == "true") {
+//     require('@instana/collector')();
+// }
 const express = require('express');
 const fs = require('fs');
 const requestIp = require('request-ip');
@@ -76,20 +77,41 @@ const INSTANA_ENUM_MIN_JS_URL = process.env.INSTANA_ENUM_MIN_JS_URL;
 const INSTANA_KEY = process.env.INSTANA_KEY;
 var INSTANA_HEADER = "";
 
-if (typeof INSTANA_REPORTING_URL != 'undefined' && INSTANA_REPORTING_URL != ""
+function getInstanaSnippet(req){
+    if (typeof INSTANA_REPORTING_URL != 'undefined' && INSTANA_REPORTING_URL != ""
     && typeof INSTANA_ENUM_MIN_JS_URL != 'undefined' && INSTANA_ENUM_MIN_JS_URL != ""
     && typeof INSTANA_KEY != 'undefined' && INSTANA_KEY != "") {
 
-    INSTANA_HEADER =
-        `<script>\n` +
-        `  (function(s,t,a,n){s[t]||(s[t]=a,n=s[a]=function(){n.q.push(arguments)},\n` +
-        `  n.q=[],n.v=2,n.l=1*new Date)})(window,"InstanaEumObject","ineum");\n` +
-        `  ineum('reportingUrl', '${INSTANA_REPORTING_URL}');\n` +
-        `  ineum('key', '${INSTANA_KEY}');\n` +
-        `  ineum('trackSessions');\n` +
-        `</script>\n` +
-        `<script defer crossorigin="anonymous" src="${INSTANA_ENUM_MIN_JS_URL}"></script>\n`;
+        var traceId = req.get('x-instana-t');
+
+        INSTANA_HEADER =
+            `<script>\n` +
+            `  (function(s,t,a,n){s[t]||(s[t]=a,n=s[a]=function(){n.q.push(arguments)},\n` +
+            `  n.q=[],n.v=2,n.l=1*new Date)})(window,"InstanaEumObject","ineum");\n` +
+            `  ineum('reportingUrl', '${INSTANA_REPORTING_URL}');\n` +
+            `  ineum('key', '${INSTANA_KEY}');\n` +
+            `  ineum('trackSessions');\n` +
+            `  ineum('traceId','${traceId}');\n` +
+            `</script>\n` +
+            `<script defer crossorigin="anonymous" src="${INSTANA_ENUM_MIN_JS_URL}"></script>\n`;
+            return INSTANA_HEADER;
+    }    
 }
+
+// if (typeof INSTANA_REPORTING_URL != 'undefined' && INSTANA_REPORTING_URL != ""
+//     && typeof INSTANA_ENUM_MIN_JS_URL != 'undefined' && INSTANA_ENUM_MIN_JS_URL != ""
+//     && typeof INSTANA_KEY != 'undefined' && INSTANA_KEY != "") {
+
+//     INSTANA_HEADER =
+//         `<script>\n` +
+//         `  (function(s,t,a,n){s[t]||(s[t]=a,n=s[a]=function(){n.q.push(arguments)},\n` +
+//         `  n.q=[],n.v=2,n.l=1*new Date)})(window,"InstanaEumObject","ineum");\n` +
+//         `  ineum('reportingUrl', '${INSTANA_REPORTING_URL}');\n` +
+//         `  ineum('key', '${INSTANA_KEY}');\n` +
+//         `  ineum('trackSessions');\n` +
+//         `</script>\n` +
+//         `<script defer crossorigin="anonymous" src="${INSTANA_ENUM_MIN_JS_URL}"></script>\n`;
+// }
 
 //================================================================================================
 // Endpoints 
@@ -200,12 +222,14 @@ function handleDaily(req,res){
         .then( (rating) => {
             quoteDetails.rating = rating.rating;
             utils.log("Obtained rating for quote: "+quote_id+".", requestToken, "INFO");
-            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": INSTANA_HEADER });
+            var instanaHeader = getInstanaSnippet(req);
+            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader });
         })
         .catch( error => {
             quoteDetails.rating = "Rating service currently unavailable.";
+            var instanaHeader = getInstanaSnippet(req);
             utils.log("Error obtaining rating for quote "+quote_id+" Error: "+error, requestToken, "WARN");
-            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": INSTANA_HEADER });
+            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader });
         })
 
     })
@@ -216,7 +240,8 @@ function handleDaily(req,res){
         quoteDetails.author_id = "";
         quoteDetails.rating = "";
         utils.log("Error obtaining quote: " + quote_id + ". " + error, requestToken, "WARN");
-        res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": INSTANA_HEADER });
+        var instanaHeader = getInstanaSnippet(req);
+        res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader });
     });
 
 }
@@ -248,12 +273,14 @@ function handleRandom(req,res){
         .then( (rating) => {
             quoteDetails.rating = rating.rating;
             utils.log("Obtained rating for quote: "+quote_id+".", requestToken, "INFO");
-            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": INSTANA_HEADER });
+            var instanaHeader = getInstanaSnippet(req);
+            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader });
         })
         .catch( error => {
             quoteDetails.rating = "Rating service currently unavailable.";
             utils.log("Error obtaining rating for quote "+quote_id+" Error: "+error, requestToken, "WARN");
-            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": INSTANA_HEADER });
+            var instanaHeader = getInstanaSnippet(req);
+            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader });
         })
 
     })
@@ -264,7 +291,8 @@ function handleRandom(req,res){
         quoteDetails.author_id = "";
         quoteDetails.rating = "";
         utils.log("Error obtaining quote: "+ quote_id + ". " + error, requestToken, "WARN");
-        res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": INSTANA_HEADER });
+        var instanaHeader = getInstanaSnippet(req);
+        res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader });
     });
 
 }
@@ -296,7 +324,8 @@ function authorHandler(req,res){
     utils.httpRequest(options)
     .then( (bio) => {
         utils.log("Author bio received.  Author id: " + id, requestToken);
-        res.render('author', { "data" : bio, "hideImage": HIDE_IMAGE, "branding" : BRANDING, "INSTANA_HEADER": INSTANA_HEADER } );
+        var instanaHeader = getInstanaSnippet(req);
+        res.render('author', { "data" : bio, "hideImage": HIDE_IMAGE, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader } );
     })
     .catch( (error) => {
         utils.log("Problem getting author bio.  " + error.message, requestToken);
@@ -394,7 +423,8 @@ function getOrderHandler(req,res){
         "state": faker.address.stateAbbr()
     }
     order.zip = faker.address.zipCodeByState(order.state);
-    order.INSTANA_HEADER = INSTANA_HEADER;
+    var instanaHeader = getInstanaSnippet(req);
+    order.INSTANA_HEADER = instanaHeader;
     res.render('order', { "order": order, "branding" : BRANDING } );
 }
 
