@@ -503,7 +503,7 @@ const package = require('./package.json');
 const { randomInt } = require('crypto');
 const appName = package.name;
 const appVersion = package.version;
-const buildInfo = fs.readFileSync('build.txt');
+const buildInfo = fs.readFileSync('build.txt').string().trim();
 
 appService = app.listen(app.get('port'), '0.0.0.0', function () {
     console.log(`Starting ${appName} v${appVersion}, ${buildInfo} on port ${app.get('port')}`);
