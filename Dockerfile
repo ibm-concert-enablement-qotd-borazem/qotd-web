@@ -8,6 +8,7 @@ COPY README.md .
 COPY package.json .
 COPY build.txt .
 COPY ./*.js ./
+COPY ./*.json ./
 COPY views ./views
 COPY public ./public
 
