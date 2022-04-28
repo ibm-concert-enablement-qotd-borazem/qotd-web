@@ -15,6 +15,18 @@
             "envFile": "${workspaceFolder}/.env",
             "runtimeArgs": ["--expose-gc"],
             "runtimeExecutable": "/Users/jconallen/.nvm/versions/node/v14.16.0/bin/node"
+        },
+        {
+            "type": "pwa-node",
+            "request": "launch",
+            "name": "test",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/z_gen_users.js",
+            "envFile": "${workspaceFolder}/.env",
+            "runtimeArgs": ["--expose-gc"],
+            "runtimeExecutable": "/Users/jconallen/.nvm/versions/node/v14.16.0/bin/node"
         }
     ]
 }

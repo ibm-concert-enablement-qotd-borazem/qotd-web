@@ -26,6 +26,11 @@
         <%- INSTANA_HEADER %>
         <script>
             ineum('page',"<%=pageid%>")
+            ineum('meta', "appVersion", "<%=localSession.appVersion%>")
+            ineum('meta', "buildInfo", "<%=localSession.buildInfo%>")
+            ineum('meta', "appName", "<%=localSession.appName%>")
+            ineum('meta', "requestToken", "<%=localSession.token%>" )
+            ineum('user', "<%=localSession.user.userId%>", "<%=localSession.user.userName%>", "<%=localSession.user.email%>" )
         </script>
     
     <% } %>
