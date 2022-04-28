@@ -27,8 +27,12 @@
     </style>
     <title>Quote of the Day Author Bio</title>
 
-    <% if( typeof INSTANA_HEADER != 'undefined' && INSTANA_HEADER != null) { %>
+    <% if( typeof INSTANA_HEADER != 'undefined' && INSTANA_HEADER != null ) { %>
         <%- INSTANA_HEADER %>
+        <script>
+            ineum('page',<%=page-id%>)
+        </script>
+    
     <% } %>
 
 </head>

@@ -27,8 +27,11 @@
     
     <% if( typeof INSTANA_HEADER != 'undefined' && INSTANA_HEADER != null ) { %>
         <%- INSTANA_HEADER %>
+        <script>
+            ineum('page',<%=page-id%>)
+        </script>
+    
     <% } %>
-
 
 </head>
 

@@ -223,13 +223,13 @@ function handleDaily(req,res){
             quoteDetails.rating = rating.rating;
             utils.log("Obtained rating for quote: "+quote_id+".", requestToken, "INFO");
             var instanaHeader = getInstanaSnippet(req);
-            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader });
+            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "page-id": "daily" });
         })
         .catch( error => {
             quoteDetails.rating = "Rating service currently unavailable.";
             var instanaHeader = getInstanaSnippet(req);
             utils.log("Error obtaining rating for quote "+quote_id+" Error: "+error, requestToken, "WARN");
-            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader });
+            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "page-id": "daily" });
         })
 
     })
@@ -241,7 +241,7 @@ function handleDaily(req,res){
         quoteDetails.rating = "";
         utils.log("Error obtaining quote: " + quote_id + ". " + error, requestToken, "WARN");
         var instanaHeader = getInstanaSnippet(req);
-        res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader });
+        res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "page-id": "daily" });
     });
 
 }
@@ -274,13 +274,13 @@ function handleRandom(req,res){
             quoteDetails.rating = rating.rating;
             utils.log("Obtained rating for quote: "+quote_id+".", requestToken, "INFO");
             var instanaHeader = getInstanaSnippet(req);
-            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader });
+            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "page-id": "random" });
         })
         .catch( error => {
             quoteDetails.rating = "Rating service currently unavailable.";
             utils.log("Error obtaining rating for quote "+quote_id+" Error: "+error, requestToken, "WARN");
             var instanaHeader = getInstanaSnippet(req);
-            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader });
+            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "page-id": "random" });
         })
 
     })
@@ -292,7 +292,7 @@ function handleRandom(req,res){
         quoteDetails.rating = "";
         utils.log("Error obtaining quote: "+ quote_id + ". " + error, requestToken, "WARN");
         var instanaHeader = getInstanaSnippet(req);
-        res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader });
+        res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "page-id": "random" });
     });
 
 }
@@ -325,7 +325,7 @@ function authorHandler(req,res){
     .then( (bio) => {
         utils.log("Author bio received.  Author id: " + id, requestToken);
         var instanaHeader = getInstanaSnippet(req);
-        res.render('author', { "data" : bio, "hideImage": HIDE_IMAGE, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader } );
+        res.render('author', { "data" : bio, "hideImage": HIDE_IMAGE, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "page-id": "author" } );
     })
     .catch( (error) => {
         utils.log("Problem getting author bio.  " + error.message, requestToken);
@@ -425,7 +425,7 @@ function getOrderHandler(req,res){
     order.zip = faker.address.zipCodeByState(order.state);
     var instanaHeader = getInstanaSnippet(req);
     order.INSTANA_HEADER = instanaHeader;
-    res.render('order', { "order": order, "branding" : BRANDING } );
+    res.render('order', { "order": order, "branding" : BRANDING, "page-id": "engraving"} );
 }
 
 serviceManager.endpointGet('/order/:id', "Getting engraving order details.", getOrderHandler);
