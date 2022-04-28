@@ -424,8 +424,7 @@ function getOrderHandler(req,res){
     }
     order.zip = faker.address.zipCodeByState(order.state);
     var instanaHeader = getInstanaSnippet(req);
-    order.INSTANA_HEADER = instanaHeader;
-    res.render('order', { "order": order, "branding" : BRANDING, "pageid": "engraving"} );
+    res.render('order', { "order": order, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "engraving"} );
 }
 
 serviceManager.endpointGet('/order/:id', "Getting engraving order details.", getOrderHandler);
