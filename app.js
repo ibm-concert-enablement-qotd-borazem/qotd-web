@@ -496,6 +496,21 @@ app.get('/version',
     }
 );
 
+app.get('/metrics',
+    function (req, res) {
+        var data = {};
+        data.ip = req.clientIp;
+        data.ips = req.clientIp;
+        data.params = req.params;
+        data.query = req.query;
+        data.headers = req.headers;
+        var str = JSON.stringify(data);
+        serviceManager.log(`/metrics : ${str}`,null,"DEBUG");
+        res.send("");
+    }
+);
+
+
 //================================================================================================
 // Main app
 
