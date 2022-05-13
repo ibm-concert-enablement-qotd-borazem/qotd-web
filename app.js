@@ -505,6 +505,8 @@ app.get('/metrics',
         data.query = req.query;
         data.headers = req.headers;
         var str = JSON.stringify(data);
+        console.log("======================================");
+        console.log(str);
         serviceManager.log(`/metrics : ${str}`,null,"DEBUG");
         res.send("");
     }
