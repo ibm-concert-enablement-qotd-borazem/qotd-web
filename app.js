@@ -23,6 +23,7 @@ AUTHOR_SVC = process.env.AUTHOR_SVC;
 RATING_SVC = process.env.RATING_SVC;
 PDF_SVC = process.env.PDF_SVC;
 ENGRAVING_SVC = process.env.ENGRAVING_SVC;
+QRCODE_SVC = process.env.QRCODE_SVC;
 HIDE_IMAGE = false;
 if( typeof process.env.HIDE_IMAGE != "undefined" ){
     HIDE_IMAGE = (typeof process.env.HIDE_IMAGE == "undefined");
@@ -198,6 +199,8 @@ function getRating(id,localSession ){
 }
 
 const ENABLE_ENGRAVING = (typeof ENGRAVING_SVC != 'undefined' && ENGRAVING_SVC != "");
+const ENABLE_QRCODE = (typeof QRCODE_SVC != 'undefined' && QRCODE_SVC != "");
+
 
 function handleDaily(req,res){
     var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
@@ -211,7 +214,8 @@ function handleDaily(req,res){
         "id": quote_id,
         "today": now.format("dddd, MMMM Do YYYY"),
         "title": "Quote of the Day",
-        "enableOrdering": ENABLE_ENGRAVING
+        "enableOrdering": ENABLE_ENGRAVING,
+        "enableQR": ENABLE_QRCODE
     }
 
     getQuote(quote_id, localSession )
@@ -262,7 +266,8 @@ function handleRandom(req,res){
         "id": quote_id,
         "today": "Random Quote",
         "title": "Quote of the Day",
-        "enableOrdering": ENABLE_ENGRAVING
+        "enableOrdering": ENABLE_ENGRAVING,
+        "enableQR": ENABLE_QRCODE
     }
 
     getQuote(quote_id, localSession )
@@ -408,6 +413,50 @@ function pdfHandler(req,res){
 }
 
 serviceManager.endpointGet('/pdf/:id', "Processing PDF request", pdfHandler);
+
+
+async function qrcodeHandler(req,res){
+    var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    var localSession  = newLocalSession();
+    utils.log('Starting new request token. Incoming for IP: ' + ip, localSession.token , "INFO");
+    var id = req.params.id;
+    utils.log('QR Code request: /qrcode/' + id + ' .', localSession.token , "INFO");
+
+    var parsedUrl = parseUrl(process.env.QRCODE_SVC);
+    var hostname = parsedUrl.resource;
+    var port = 80;
+    if (parsedUrl.port != null) port = parsedUrl.port;
+
+    const options = {
+        "headers": { "Accept": "image/png" },
+        "method": 'POST',
+        "hostname": hostname,
+        "port": port,
+        "path": '/qotd-qrcode/qr?requestToken=' + localSession.token ,
+        "timeout": 5000,
+        "requestToken": localSession.token 
+    }
+
+    try{
+        var payload = await getQuote(id, localSession.token );
+
+        utils.httpRequest(options,payload.quote)
+        .then( (buf) => {
+            utils.log("QR Code image received.  Quote id: " + id, localSession.token , "WARN");
+            res.status(200).end(Buffer.from(buf, 'binary'));
+        })
+        .catch( (error) => {
+            utils.log("Problem building QR code.  " + error.message, localSession.token , "WARN");
+            res.status(500).send("Problem building QR code.");
+        });
+    } catch( error ) {
+        utils.log(error,localSession.token);
+    }
+
+}
+
+serviceManager.endpointGet('/qrcode/:id', "Processing QR Code request", qrcodeHandler);
+
 
 function getOrderHandler(req,res){
     var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;

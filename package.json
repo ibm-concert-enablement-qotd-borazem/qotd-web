@@ -1,6 +1,6 @@
 {
 	"name": "qotd-web",
-	"version": "4.0.1",
+	"version": "4.1.0",
 	"private": true,
 	"scripts": {
 		"start": "node app.js"

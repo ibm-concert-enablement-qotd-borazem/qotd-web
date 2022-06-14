@@ -82,6 +82,10 @@
         <div class="row" style="padding-top: 100px;">
             <div class="container" style="text-align: left;">
                 <a id="pdf_link" href="/pdf/<%=quoteDetails.id%>"><button id="btnPDF" class="btn btn-outline-dark">PDF &nbsp; <img src="/images/pdf.png" width="16"></button></a>
+                <% if( typeof quoteDetails.enableQR != 'undefined' && quoteDetails.enableQR ) { %>
+                    <a id="qrcode_link" href="/qrcode/<%=quoteDetails.id%>" style="text-align: right;"><button id="btnOrder" class="btn btn-outline-dark float-left">QR Code  &nbsp; <img src="/images/qrcode.png" width="20"></button></a>
+    
+                <% } %>
             <% if( typeof quoteDetails.enableOrdering != 'undefined' && quoteDetails.enableOrdering ) { %>
                 <a id="order_link" href="/order/<%=quoteDetails.id%>" style="text-align: right;"><button id="btnOrder" class="btn btn-outline-dark float-right">Order Engraving</button></a>
 
