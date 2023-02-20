@@ -1,21 +1,21 @@
+require('dotenv').config();
 if (process.env.ENABLE_INSTANA == "true") {
     require('@instana/collector')();
 }
-require('dotenv').config();
 
 const express = require('express');
 const fs = require('fs');
 const requestIp = require('request-ip');
 const moment = require('moment');
 const parseUrl = require('parse-url');
-const faker = require('faker');
 const serviceManager = require('@quote-of-the-day/service-control');
-
-var utils = serviceManager.utils;
+const utils = serviceManager.utils;
 
 USE_REQ_TOKEN = true;
-if (typeof process.env.USE_REQ_TOKEN != 'undefined') {
-    USE_REQ_TOKEN = (process.env.USE_REQ_TOKEN == 'true' || process.env.USE_REQ_TOKEN == 'True');
+if (typeof process.env.USE_REQ_TOKEN != 'undefined' && USE_REQ_TOKEN == (process.env.USE_REQ_TOKEN.toLowerCase() == 'true' ) ) {
+    utils.logInfo("Using request token.")
+} else {
+    utils.logInfo("Not using request token.")
 }
 
 QUOTE_SVC = process.env.QUOTE_SVC;
@@ -25,9 +25,7 @@ PDF_SVC = process.env.PDF_SVC;
 ENGRAVING_SVC = process.env.ENGRAVING_SVC;
 QRCODE_SVC = process.env.QRCODE_SVC;
 HIDE_IMAGE = false;
-if( typeof process.env.HIDE_IMAGE != "undefined" ){
-    HIDE_IMAGE = (typeof process.env.HIDE_IMAGE == "undefined");
-}
+
 
 BRANDING=null;
 if( typeof process.env.BRANDING == "string" && process.env.BRANDING.length>0  ){
@@ -56,30 +54,11 @@ var data = fs.readFileSync('./users.json');
 const USERS = JSON.parse(data);
 
 function newLocalSession() {
-    var index = randomInt(USERS.length);
+    var index = utils.intBetween(0,USERS.length);
     var user = USERS[index];
     var token = utils.intBetween(100000, 999999);
     return { "token": token, "user": user, "appName": appName, "appVersion": appVersion, "buildInfo": buildInfo };
 }
-
-//================================================================================================
-// service management
-
-const anomalyConfig = { 
-    "url": process.env.ANOMALY_GENERATOR_URL,
-    "logLevel": process.env.LOG_LEVEL
-}
-
-if( typeof process.env.POLLING_FREQUENCY != 'undefined' && Number.parseInt(process.env.POLLING_FREQUENCY) ) {
-    anomalyConfig.pollingFrequency = parseInt(process.env.POLLING_FREQUENCY);
-} else {
-    anomalyConfig.pollingFrequency = 5000;
-}
-
-serviceManager.config(anomalyConfig, app);
-
-utils = serviceManager.utils;
-
 
 //================================================================================================
 // Instana web app token
@@ -110,21 +89,6 @@ function getInstanaSnippet(req){
     }    
 }
 
-// if (typeof INSTANA_REPORTING_URL != 'undefined' && INSTANA_REPORTING_URL != ""
-//     && typeof INSTANA_ENUM_MIN_JS_URL != 'undefined' && INSTANA_ENUM_MIN_JS_URL != ""
-//     && typeof INSTANA_KEY != 'undefined' && INSTANA_KEY != "") {
-
-//     INSTANA_HEADER =
-//         `<script>\n` +
-//         `  (function(s,t,a,n){s[t]||(s[t]=a,n=s[a]=function(){n.q.push(arguments)},\n` +
-//         `  n.q=[],n.v=2,n.l=1*new Date)})(window,"InstanaEumObject","ineum");\n` +
-//         `  ineum('reportingUrl', '${INSTANA_REPORTING_URL}');\n` +
-//         `  ineum('key', '${INSTANA_KEY}');\n` +
-//         `  ineum('trackSessions');\n` +
-//         `</script>\n` +
-//         `<script defer crossorigin="anonymous" src="${INSTANA_ENUM_MIN_JS_URL}"></script>\n`;
-// }
-
 //================================================================================================
 // Endpoints 
 
@@ -136,7 +100,7 @@ function getQuote(id,localSession ){
         var port = 80;
         if (parsedUrl.port != null) port = parsedUrl.port;  
 
-        utils.log("Requesting quote " + id + ".", localSession.token , "INFO");
+        utils.logInfo("Requesting quote " + id + ".", localSession.token );
 
         const options = {
             "headers": { "Accept": "application/json" },
@@ -149,11 +113,11 @@ function getQuote(id,localSession ){
 
         utils.httpRequest(options)
         .then( (quote) => {
-            utils.log("Quote service request for quote details sucessfull ["+id+"].", localSession.token , "INFO");
+            utils.logInfo("Quote service request for quote details sucessfull ["+id+"].", localSession.token );
             resolve(quote);
         })
         .catch( (error) => {
-            utils.log("Problem submitting quote service quote request. Error: " + error.message, localSession.token , "INFO");
+            utils.logInfo("Problem submitting quote service quote request. Error: " + error.message, localSession.token);
             var errObj = {
                 "error": 'Rejecting quote service.  Status: ' + error.statusCode,
                 "resource": `http://${options.hostname}:${options.port}${options.path}`
@@ -171,7 +135,7 @@ function getRating(id,localSession ){
         var port = 80;
         if (parsedUrl.port != null) port = parsedUrl.port;  
 
-        utils.log("Requesting rating for quote " + id + ".", localSession.token , "INFO");
+        utils.logInfo("Requesting rating for quote " + id + ".", localSession.token );
 
         const options = {
             "headers": { "Accept": "application/json" },
@@ -184,11 +148,11 @@ function getRating(id,localSession ){
 
         utils.httpRequest(options)
         .then( (quote) => {
-            utils.log("Rating service request for quote "+id+".", localSession.token , "INFO");
+            utils.logInfo("Rating service request for quote "+id+".", localSession.token);
             resolve(quote);
         })
         .catch( (error) => {
-            utils.log("Problem getting rating. Error: " + error.message, localSession.token , "INFO");
+            utils.logInfo("Problem getting rating. Error: " + error.message, localSession.token);
             var errObj = {
                 "error": 'Rejecting rating service.  Status: ' + error.statusCode,
                 "resource": `http://${options.hostname}:${options.port}${options.path}`
@@ -205,8 +169,8 @@ const ENABLE_QRCODE = (typeof QRCODE_SVC != 'undefined' && QRCODE_SVC != "");
 function handleDaily(req,res){
     var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     var localSession  = newLocalSession();
-    utils.log('Starting new request token. Incoming for IP: ' + ip, localSession.token , "INFO");
-    utils.log('Web request: /', localSession.token , "INFO");
+    utils.logInfo('Starting new request token. Incoming for IP: ' + ip, localSession.token );
+    utils.logInfo('Web request: /', localSession.token);
 
     var now = new moment();
     var quote_id = now.dayOfYear();
@@ -228,14 +192,14 @@ function handleDaily(req,res){
         getRating(quote_id, localSession )
         .then( (rating) => {
             quoteDetails.rating = rating.rating;
-            utils.log("Obtained rating for quote: "+quote_id+".", localSession.token , "INFO");
+            utils.logInfo("Obtained rating for quote: "+quote_id+".", localSession.token);
             var instanaHeader = getInstanaSnippet(req);
             res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "daily", "localSession": localSession });
         })
         .catch( error => {
             quoteDetails.rating = "Rating service currently unavailable.";
             var instanaHeader = getInstanaSnippet(req);
-            utils.log("Error obtaining rating for quote "+quote_id+" Error: "+error, localSession.token , "WARN");
+            utils.logWarn("Error obtaining rating for quote "+quote_id+" Error: "+error, localSession.token);
             res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "daily", "localSession": localSession });
         })
 
@@ -246,7 +210,7 @@ function handleDaily(req,res){
         quoteDetails.author = "";
         quoteDetails.author_id = "";
         quoteDetails.rating = "";
-        utils.log("Error obtaining quote: " + quote_id + ". " + error, localSession.token , "WARN");
+        utils.logWarn("Error obtaining quote: " + quote_id + ". " + error, localSession.token);
         var instanaHeader = getInstanaSnippet(req);
         res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "daily", "localSession": localSession });
     });
@@ -258,8 +222,8 @@ serviceManager.endpointGet('/', "Processing daily quote request", handleDaily);
 function handleRandom(req,res){
     var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     var localSession  = newLocalSession();
-    utils.log('Starting new request token. Incoming for IP: ' + ip, localSession.token , "INFO");
-    utils.log('Web request: /random', localSession.token , "INFO");
+    utils.logInfo('Starting new request token. Incoming for IP: ' + ip, localSession.token);
+    utils.logInfo('Web request: /random', localSession.token);
 
     var quote_id = utils.intBetween(1,500);
     var quoteDetails = {
@@ -280,13 +244,13 @@ function handleRandom(req,res){
         getRating(quote_id, localSession )
         .then( (rating) => {
             quoteDetails.rating = rating.rating;
-            utils.log("Obtained rating for quote: "+quote_id+".", localSession.token , "INFO");
+            utils.logInfo("Obtained rating for quote: "+quote_id+".", localSession.token);
             var instanaHeader = getInstanaSnippet(req);
             res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "random", "localSession": localSession });
         })
         .catch( error => {
             quoteDetails.rating = "Rating service currently unavailable.";
-            utils.log("Error obtaining rating for quote "+quote_id+" Error: "+error, localSession.token , "WARN");
+            utils.logError("Error obtaining rating for quote "+quote_id+" Error: "+error, localSession.token);
             var instanaHeader = getInstanaSnippet(req);
             res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "random", "localSession": localSession });
         })
@@ -298,7 +262,7 @@ function handleRandom(req,res){
         quoteDetails.author = "";
         quoteDetails.author_id = "";
         quoteDetails.rating = "";
-        utils.log("Error obtaining quote: "+ quote_id + ". " + error, localSession.token , "WARN");
+        utils.logError("Error obtaining quote: "+ quote_id + ". " + error, localSession.token);
         var instanaHeader = getInstanaSnippet(req);
         res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "random", "localSession": localSession });
     });
@@ -310,9 +274,9 @@ serviceManager.endpointGet('/random', "Processing random quote request", handleR
 function authorHandler(req,res){
     var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     var localSession  = newLocalSession();
-    utils.log('Starting new request token. Incoming for IP: ' + ip, localSession.token , "INFO");
+    utils.logInfo('Starting new request token. Incoming for IP: ' + ip, localSession.token);
     var id = req.params.id;
-    utils.log('Author bio request: /author/' + id + ' .', localSession.token , "INFO");
+    utils.logInfo('Author bio request: /author/' + id + ' .', localSession.token);
 
     var parsedUrl = parseUrl(process.env.AUTHOR_SVC);
     var hostname = parsedUrl.resource;
@@ -331,12 +295,12 @@ function authorHandler(req,res){
 
     utils.httpRequest(options)
     .then( (bio) => {
-        utils.log("Author bio received.  Author id: " + id, localSession.token );
+        utils.logInfo("Author bio received.  Author id: " + id, localSession.token );
         var instanaHeader = getInstanaSnippet(req);
-        res.render('author', { "data" : bio, "hideImage": HIDE_IMAGE, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "author", "localSession": localSession } );
+        res.render('author', { "data" : bio, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "author", "localSession": localSession } );
     })
     .catch( (error) => {
-        utils.log("Problem getting author bio.  " + error.message, localSession.token );
+        utils.logError("Problem getting author bio.  " + error.message, localSession.token );
         res.status(500).send("Problem getting author bio.");
     });
 }
@@ -346,9 +310,9 @@ serviceManager.endpointGet('/author/:id', "Processing author bio request", autho
 function imageHandler(req,res){
     var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     var localSession  = newLocalSession();
-    utils.log('Starting new request token. Incoming for IP: ' + ip, localSession.token , "INFO");
+    utils.logInfo('Starting new request token. Incoming for IP: ' + ip, localSession.token);
     var id = req.params.id;
-    utils.log('Author image request: /images/' + id + ' .', localSession.token , "INFO");
+    utils.logInfo('Author image request: /images/' + id + ' .', localSession.token);
 
     var parsedUrl = parseUrl(process.env.AUTHOR_SVC);
     var hostname = parsedUrl.resource;
@@ -367,11 +331,11 @@ function imageHandler(req,res){
 
     utils.httpRequest(options)
     .then( (imageBuf) => {
-        utils.log("Author image received.  Author id: " + id, localSession.token , "WARN");
+        utils.logError("Author image received.  Author id: " + id, localSession.token);
         res.status(200).end(Buffer.from(imageBuf, 'binary'));
     })
     .catch( (error) => {
-        utils.log("Problem getting author image.  " + error.message, localSession.token , "WARN");
+        utils.logError("Problem getting author image.  " + error.message, localSession.token);
         res.status(500).send("Problem getting author image.");
     });
 }
@@ -382,9 +346,9 @@ serviceManager.endpointGet('/images/:id', "Processing author image request", ima
 function pdfHandler(req,res){
     var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     var localSession  = newLocalSession();
-    utils.log('Starting new request token. Incoming for IP: ' + ip, localSession.token , "INFO");
+    utils.logInfo('Starting new request token. Incoming for IP: ' + ip, localSession.token);
     var id = req.params.id;
-    utils.log('PDF request: /pdf/' + id + ' .', localSession.token , "INFO");
+    utils.logInfo('PDF request: /pdf/' + id + ' .', localSession.token);
 
     var parsedUrl = parseUrl(process.env.PDF_SVC);
     var hostname = parsedUrl.resource;
@@ -403,11 +367,11 @@ function pdfHandler(req,res){
 
     utils.httpRequest(options)
     .then( (pdfBuf) => {
-        utils.log("Quote PDF received.  Quote id: " + id, localSession.token , "WARN");
+        utils.logError("Quote PDF received.  Quote id: " + id, localSession.token);
         res.status(200).end(Buffer.from(pdfBuf, 'binary'));
     })
     .catch( (error) => {
-        utils.log("Problem building pdf.  " + error.message, localSession.token , "WARN");
+        utils.logError("Problem building pdf.  " + error.message, localSession.token);
         res.status(500).send("Problem building pdf.");
     });
 }
@@ -418,9 +382,9 @@ serviceManager.endpointGet('/pdf/:id', "Processing PDF request", pdfHandler);
 async function qrcodeHandler(req,res){
     var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     var localSession  = newLocalSession();
-    utils.log('Starting new request token. Incoming for IP: ' + ip, localSession.token , "INFO");
+    utils.logInfo('Starting new request token. Incoming for IP: ' + ip, localSession.token);
     var id = req.params.id;
-    utils.log('QR Code request: /qrcode/' + id + ' .', localSession.token , "INFO");
+    utils.logInfo('QR Code request: /qrcode/' + id + ' .', localSession.token);
 
     var parsedUrl = parseUrl(process.env.QRCODE_SVC);
     var hostname = parsedUrl.resource;
@@ -442,11 +406,11 @@ async function qrcodeHandler(req,res){
 
         utils.httpRequest(options,payload.quote)
         .then( (buf) => {
-            utils.log("QR Code image received.  Quote id: " + id, localSession.token , "WARN");
+            utils.logError("QR Code image received.  Quote id: " + id, localSession.token );
             res.status(200).end(Buffer.from(buf, 'binary'));
         })
         .catch( (error) => {
-            utils.log("Problem building QR code.  " + error.message, localSession.token , "WARN");
+            utils.logError("Problem building QR code.  " + error.message, localSession.token );
             res.status(500).send("Problem building QR code.");
         });
     } catch( error ) {
@@ -461,20 +425,20 @@ serviceManager.endpointGet('/qrcode/:id', "Processing QR Code request", qrcodeHa
 function getOrderHandler(req,res){
     var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     var localSession  = newLocalSession();
-    utils.log('Starting new request token. Incoming for IP: ' + ip, localSession.token , "INFO");
+    utils.logInfo('Starting new request token. Incoming for IP: ' + ip, localSession.token);
     var id = req.params.id;
-    utils.log('Order engraving request: /order/' + id + ' .', localSession.token , "INFO");
+    utils.logInfo('Order engraving request: /order/' + id + ' .', localSession.token);
 
     var order = {
         "quote_id": id,
         "token": localSession.token ,
-        "orderNo": faker.finance.account,
-        "dedication": faker.lorem.slug(),
-        "street": faker.address.streetAddress(),
-        "city": faker.address.cityName(),
-        "state": faker.address.stateAbbr()
+        "orderNo": utils.faker.finance.account,
+        "dedication": utils.faker.lorem.slug(),
+        "street": utils.faker.address.streetAddress(),
+        "city": utils.faker.address.city(),
+        "state": utils.faker.address.stateAbbr()
     }
-    order.zip = faker.address.zipCodeByState(order.state);
+    order.zip = utils.faker.address.zipCodeByState(order.state);
     var instanaHeader = getInstanaSnippet(req);
     res.render('order', { "order": order, "INSTANA_HEADER": instanaHeader, "pageid": "engraving", "localSession": localSession } );
 }
@@ -485,11 +449,11 @@ serviceManager.endpointGet('/order/:id', "Getting engraving order details.", get
 async function postOrderHandler(req,res){
     var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     var localSession  = newLocalSession();
-    utils.log('Starting new request token. Incoming for IP: ' + ip, localSession.token , "INFO");
-    utils.log('Processing order engraving request: /order.', localSession.token , "INFO");
+    utils.logInfo('Starting new request token. Incoming for IP: ' + ip, localSession.token);
+    utils.logInfo('Processing order engraving request: /order.', localSession.token);
 
     var order = req.body;
-    order.customer = faker.finance.accountName;
+    order.customer = utils.faker.finance.accountName;
 
     var quote = await getQuote(order.quote_id, localSession.token );
     order.quote = quote.quote;
@@ -501,7 +465,7 @@ async function postOrderHandler(req,res){
     var hostname = parsedUrl.resource;
     var port = 80;
     if (parsedUrl.port != null) port = parsedUrl.port;
-    var path = parsedUrl.pathname + '/order?requestToken=' + localSession.token ;
+    var path = '/order?requestToken=' + localSession.token ;
 
     const options = {
         "headers": { "Accept": "application/json" },
@@ -515,11 +479,11 @@ async function postOrderHandler(req,res){
 
     utils.httpRequest(options, payload)
     .then( (orderRes) => {
-        utils.log("Quote PDF received.  Quote id: " + order.quote_id, localSession.token , "WARN");
+        utils.logError("Quote PDF received.  Quote id: " + order.quote_id, localSession.token);
         res.status(200).json(orderRes);
     })
     .catch( (error) => {
-        utils.log("Problem requesting engraving.  " + error.message, localSession.token , "WARN");
+        utils.logError("Problem requesting engraving.  " + error.message, localSession.token);
         res.status(500).send("Problem requesting engraving. "+error.message);
     });
 }
@@ -532,24 +496,31 @@ serviceManager.endpointPost('/order', "Submitting engraving request to manufactu
 
 app.get('/',
     function (req, res) {
-        serviceManager.log('/',null,"DEBUG");
+        utils.logDebug('/');
         res.redirect('/version');
     }
 );
 
 app.get('/version',
     function (req, res) {
-        serviceManager.log('/version',null,"DEBUG");
+        utils.logDebug('/version');
         var ip = req.clientIp;
         res.send(`${appName} v${appVersion}, build: ${buildInfo}.  Your IP: ${ip}`);
     }
 );
 
 //================================================================================================
+// service management
+
+serviceManager.config(app);
+
+
+
+//================================================================================================
 // Main app
 
 const package = require('./package.json');
-const { randomInt } = require('crypto');
+//const { randomInt } = require('crypto');
 const appName = package.name;
 const appVersion = package.version;
 const buildInfo = fs.readFileSync('build.txt', 'utf8').trim();

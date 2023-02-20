@@ -54,11 +54,9 @@
             </div>
 
             <div class="row" style="padding-top: 2em;">
-                <% if( !hideImage ) {  %>
-                    <div class="col-md-3">
-                        <img id="author_image" src="/images/<%=data.author_id%>" class="img-fluid">
-                    </div>
-                <% } %>
+                <div class="col-md-3">
+                    <img id="author_image" src="/images/<%=data.author_id%>" class="img-fluid">
+                </div>
                 <div id="divBio" class="col-md-9">
                     <%- data.bio %>
                 </div>
