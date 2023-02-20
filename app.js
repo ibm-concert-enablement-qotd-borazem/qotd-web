@@ -12,10 +12,11 @@ const serviceManager = require('@quote-of-the-day/service-control');
 const utils = serviceManager.utils;
 
 USE_REQ_TOKEN = true;
-if (typeof process.env.USE_REQ_TOKEN != 'undefined' && USE_REQ_TOKEN == (process.env.USE_REQ_TOKEN.toLowerCase() == 'true' ) ) {
-    utils.logInfo("Using request token.")
+if (typeof process.env.USE_REQ_TOKEN != 'undefined' && (process.env.USE_REQ_TOKEN.toLowerCase() == 'false' ) ) {
+    utils.logInfo("Not using request token.");
+    USE_REQ_TOKEN = false;
 } else {
-    utils.logInfo("Not using request token.")
+    utils.logInfo("Using request token.")
 }
 
 QUOTE_SVC = process.env.QUOTE_SVC;
@@ -217,7 +218,7 @@ function handleDaily(req,res){
 
 }
 
-serviceManager.endpointGet('/', "Processing daily quote request", handleDaily);
+serviceManager.endpointGet(app, '/', "Processing daily quote request", handleDaily);
 
 function handleRandom(req,res){
     var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
@@ -269,7 +270,7 @@ function handleRandom(req,res){
 
 }
 
-serviceManager.endpointGet('/random', "Processing random quote request", handleRandom);
+serviceManager.endpointGet(app, '/random', "Processing random quote request", handleRandom);
 
 function authorHandler(req,res){
     var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
@@ -305,7 +306,7 @@ function authorHandler(req,res){
     });
 }
 
-serviceManager.endpointGet('/author/:id', "Processing author bio request", authorHandler);
+serviceManager.endpointGet(app, '/author/:id', "Processing author bio request", authorHandler);
 
 function imageHandler(req,res){
     var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
@@ -340,7 +341,7 @@ function imageHandler(req,res){
     });
 }
 
-serviceManager.endpointGet('/images/:id', "Processing author image request", imageHandler);
+serviceManager.endpointGet(app, '/images/:id', "Processing author image request", imageHandler);
 
 
 function pdfHandler(req,res){
@@ -376,7 +377,7 @@ function pdfHandler(req,res){
     });
 }
 
-serviceManager.endpointGet('/pdf/:id', "Processing PDF request", pdfHandler);
+serviceManager.endpointGet(app, '/pdf/:id', "Processing PDF request", pdfHandler);
 
 
 async function qrcodeHandler(req,res){
@@ -419,7 +420,7 @@ async function qrcodeHandler(req,res){
 
 }
 
-serviceManager.endpointGet('/qrcode/:id', "Processing QR Code request", qrcodeHandler);
+serviceManager.endpointGet(app, '/qrcode/:id', "Processing QR Code request", qrcodeHandler);
 
 
 function getOrderHandler(req,res){
@@ -443,7 +444,7 @@ function getOrderHandler(req,res){
     res.render('order', { "order": order, "INSTANA_HEADER": instanaHeader, "pageid": "engraving", "localSession": localSession } );
 }
 
-serviceManager.endpointGet('/order/:id', "Getting engraving order details.", getOrderHandler);
+serviceManager.endpointGet(app, '/order/:id', "Getting engraving order details.", getOrderHandler);
 
 
 async function postOrderHandler(req,res){
@@ -487,45 +488,19 @@ async function postOrderHandler(req,res){
         res.status(500).send("Problem requesting engraving. "+error.message);
     });
 }
-serviceManager.endpointPost('/order', "Submitting engraving request to manufacturing.", postOrderHandler);
+serviceManager.endpointPost(app, '/order', "Submitting engraving request to manufacturing.", postOrderHandler);
 
-
-
-//================================================================================================
-// Common app endpoints
-
-app.get('/',
-    function (req, res) {
-        utils.logDebug('/');
-        res.redirect('/version');
-    }
-);
-
-app.get('/version',
-    function (req, res) {
-        utils.logDebug('/version');
-        var ip = req.clientIp;
-        res.send(`${appName} v${appVersion}, build: ${buildInfo}.  Your IP: ${ip}`);
-    }
-);
-
-//================================================================================================
-// service management
-
-serviceManager.config(app);
-
-
-
-//================================================================================================
-// Main app
+// Start things off
 
 const package = require('./package.json');
-//const { randomInt } = require('crypto');
 const appName = package.name;
 const appVersion = package.version;
-const buildInfo = fs.readFileSync('build.txt', 'utf8').trim();
+const buildInfo = fs.readFileSync('build.txt');
+var app_config = {
+    "name": appName,
+    "version": appVersion,
+    "build": buildInfo
+}
 
-appService = app.listen(app.get('port'), '0.0.0.0', function () {
-    console.log(`Starting ${appName} v${appVersion}, ${buildInfo} on port ${app.get('port')}`);
-});
+serviceManager.start(app, app_config);
 
