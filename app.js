@@ -495,7 +495,7 @@ serviceManager.endpointPost(app, '/order', "Submitting engraving request to manu
 const package = require('./package.json');
 const appName = package.name;
 const appVersion = package.version;
-const buildInfo = fs.readFileSync('build.txt').trim();
+const buildInfo = fs.readFileSync('build.txt').toString().trim();
 var app_config = {
     "name": appName,
     "version": appVersion,
