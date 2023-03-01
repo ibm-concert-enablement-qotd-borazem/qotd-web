@@ -3,6 +3,8 @@ if (process.env.ENABLE_INSTANA == "true") {
     require('@instana/collector')();
 }
 
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 const express = require('express');
 const fs = require('fs');
 const requestIp = require('request-ip');
@@ -75,7 +77,7 @@ if (typeof INSTANA_REPORTING_URL != 'undefined' && INSTANA_REPORTING_URL != "" )
     INSTANA_CORS_URL = "https://"+hostname;
 }
 
-function getInstanaSnippet(req){
+function getInstanaSnippet(req, pageid, localSession){
     if (typeof INSTANA_REPORTING_URL != 'undefined' && INSTANA_REPORTING_URL != ""
     && typeof INSTANA_ENUM_MIN_JS_URL != 'undefined' && INSTANA_ENUM_MIN_JS_URL != ""
     && typeof INSTANA_KEY != 'undefined' && INSTANA_KEY != "") {
@@ -91,12 +93,52 @@ function getInstanaSnippet(req){
     ineum('trackSessions');
     ineum('traceId','${traceId}');
     ineum('allowedOrigins', [/.*api\.example\.com.*/]);
+    ineum('page',"${pageid}");
+    ineum('meta', "appVersion", "${appVersion}");
+    ineum('meta', "buildInfo", "${buildInfo}");
+    ineum('meta', "appName", "${appName}");
+    ineum('meta', "requestToken", "${localSession.token}" );
+    ineum('user', "${localSession.user.userId}", "${localSession.user.userName}", "${localSession.user.email}" );
 </script>
-<script defer crossorigin="anonymous" src="${INSTANA_ENUM_MIN_JS_URL}"></script>`
-            return instanaHeader;
-    }    
+<script defer crossorigin="anonymous" src="/eum/eum.min.js"></script>`
+        return instanaHeader;
+    }
 }
 
+//. proxy for enum_min_js
+
+app.get('/eum/eum.min.js', async function(req,res){
+    // pass through request to instana server
+    var parsedUrl = parseUrl(INSTANA_ENUM_MIN_JS_URL);
+    var hostname = parsedUrl.resource;
+    var port = 80;
+    if( INSTANA_ENUM_MIN_JS_URL.startsWith("https") ) port = 443;
+    if (parsedUrl.port != null) port = parsedUrl.port;  
+
+    utils.logDebug("Requesting instana enum min js.");
+
+    const options = {
+        "headers": { "Accept": "application/javascript" },
+        "method": 'GET',
+        "hostname": hostname,
+        "port": port,
+        "path": parsedUrl.pathname ,
+        "timeout": 5000
+    }
+
+    utils.httpsRequest(options)
+    .then( (enumMinJs) => {
+        utils.logDebug("instana enum min js sucessfull.");
+        res.set("Content-Type", "application/javascript" );
+        var js = enumMinJs.toString();
+        console.log(js);
+        res.send(js);
+    })
+    .catch( (error) => {
+        utils.logDebug("Problem Requesting instana enum min js. Error: " + error.message);
+        res.status(error.status).json(error);
+    });
+});
 
 //================================================================================================
 // Endpoints 
@@ -202,14 +244,14 @@ function handleDaily(req,res){
         .then( (rating) => {
             quoteDetails.rating = rating.rating;
             utils.logInfo("Obtained rating for quote: "+quote_id+".", localSession.token);
-            var instanaHeader = getInstanaSnippet(req);
+            var instanaHeader = getInstanaSnippet(req, "daily", localSession);
             res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
             res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
             res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "daily", "localSession": localSession });
         })
         .catch( error => {
             quoteDetails.rating = "Rating service currently unavailable.";
-            var instanaHeader = getInstanaSnippet(req);
+            var instanaHeader = getInstanaSnippet(req, "daily", localSession);
             utils.logWarn("Error obtaining rating for quote "+quote_id+" Error: "+error, localSession.token);
             res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
             res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
@@ -224,7 +266,7 @@ function handleDaily(req,res){
         quoteDetails.author_id = "";
         quoteDetails.rating = "";
         utils.logWarn("Error obtaining quote: " + quote_id + ". " + error, localSession.token);
-        var instanaHeader = getInstanaSnippet(req);
+        var instanaHeader = getInstanaSnippet(req, "daily", localSession);
         res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
         res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
         res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "daily", "localSession": localSession });
@@ -260,7 +302,7 @@ function handleRandom(req,res){
         .then( (rating) => {
             quoteDetails.rating = rating.rating;
             utils.logInfo("Obtained rating for quote: "+quote_id+".", localSession.token);
-            var instanaHeader = getInstanaSnippet(req);
+            var instanaHeader = getInstanaSnippet(req, "random", localSession);
             res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
             res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
             res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "random", "localSession": localSession });
@@ -268,7 +310,7 @@ function handleRandom(req,res){
         .catch( error => {
             quoteDetails.rating = "Rating service currently unavailable.";
             utils.logError("Error obtaining rating for quote "+quote_id+" Error: "+error, localSession.token);
-            var instanaHeader = getInstanaSnippet(req);
+            var instanaHeader = getInstanaSnippet(req, "random", localSession);
             res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
             res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
             res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "random", "localSession": localSession });
@@ -282,7 +324,7 @@ function handleRandom(req,res){
         quoteDetails.author_id = "";
         quoteDetails.rating = "";
         utils.logError("Error obtaining quote: "+ quote_id + ". " + error, localSession.token);
-        var instanaHeader = getInstanaSnippet(req);
+        var instanaHeader = getInstanaSnippet(req, "random", localSession);
         res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
         res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
         res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "random", "localSession": localSession });
@@ -317,7 +359,7 @@ function authorHandler(req,res){
     utils.httpRequest(options)
     .then( (bio) => {
         utils.logInfo("Author bio received.  Author id: " + id, localSession.token );
-        var instanaHeader = getInstanaSnippet(req);            
+        var instanaHeader = getInstanaSnippet(req, "author", localSession);
         res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
         res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
         res.render('author', { "data" : bio, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "author", "localSession": localSession } );
@@ -462,7 +504,7 @@ function getOrderHandler(req,res){
         "state": utils.faker.address.stateAbbr()
     }
     order.zip = utils.faker.address.zipCodeByState(order.state);
-    var instanaHeader = getInstanaSnippet(req);
+    var instanaHeader = getInstanaSnippet(req, "engraving", localSession);
     res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
     res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
     res.render('order', { "order": order, "INSTANA_HEADER": instanaHeader, "pageid": "engraving", "localSession": localSession } );
