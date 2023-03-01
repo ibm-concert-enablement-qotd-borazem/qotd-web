@@ -67,7 +67,13 @@ function newLocalSession() {
 const INSTANA_REPORTING_URL = process.env.INSTANA_REPORTING_URL;
 const INSTANA_ENUM_MIN_JS_URL = process.env.INSTANA_ENUM_MIN_JS_URL;
 const INSTANA_KEY = process.env.INSTANA_KEY;
-var INSTANA_HEADER = "";
+
+var INSTANA_CORS_URL = "";
+if (typeof INSTANA_REPORTING_URL != 'undefined' && INSTANA_REPORTING_URL != "" ) {
+    var url = parseUrl(INSTANA_REPORTING_URL);
+    var hostname = url.resource;
+    INSTANA_CORS_URL = "https://"+hostname;
+}
 
 function getInstanaSnippet(req){
     if (typeof INSTANA_REPORTING_URL != 'undefined' && INSTANA_REPORTING_URL != ""
@@ -76,19 +82,21 @@ function getInstanaSnippet(req){
 
         var traceId = req.get('x-instana-t');
 
-        INSTANA_HEADER =
-            `<script>\n` +
-            `  (function(s,t,a,n){s[t]||(s[t]=a,n=s[a]=function(){n.q.push(arguments)},\n` +
-            `  n.q=[],n.v=2,n.l=1*new Date)})(window,"InstanaEumObject","ineum");\n` +
-            `  ineum('reportingUrl', '${INSTANA_REPORTING_URL}');\n` +
-            `  ineum('key', '${INSTANA_KEY}');\n` +
-            `  ineum('trackSessions');\n` +
-            `  ineum('traceId','${traceId}');\n` +
-            `</script>\n` +
-            `<script defer crossorigin="anonymous" src="${INSTANA_ENUM_MIN_JS_URL}"></script>\n`;
-            return INSTANA_HEADER;
+        var instanaHeader =
+`<script>
+    (function(s,t,a,n){s[t]||(s[t]=a,n=s[a]=function(){n.q.push(arguments)},
+    n.q=[],n.v=2,n.l=1*new Date)})(window,"InstanaEumObject","ineum");
+    ineum('reportingUrl', '${INSTANA_REPORTING_URL}');
+    ineum('key', '${INSTANA_KEY}');
+    ineum('trackSessions');
+    ineum('traceId','${traceId}');
+    ineum('allowedOrigins', [/.*api\.example\.com.*/]);
+</script>
+<script defer crossorigin="anonymous" src="${INSTANA_ENUM_MIN_JS_URL}"></script>`
+            return instanaHeader;
     }    
 }
+
 
 //================================================================================================
 // Endpoints 
@@ -195,12 +203,16 @@ function handleDaily(req,res){
             quoteDetails.rating = rating.rating;
             utils.logInfo("Obtained rating for quote: "+quote_id+".", localSession.token);
             var instanaHeader = getInstanaSnippet(req);
+            res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
+            res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
             res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "daily", "localSession": localSession });
         })
         .catch( error => {
             quoteDetails.rating = "Rating service currently unavailable.";
             var instanaHeader = getInstanaSnippet(req);
             utils.logWarn("Error obtaining rating for quote "+quote_id+" Error: "+error, localSession.token);
+            res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
+            res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
             res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "daily", "localSession": localSession });
         })
 
@@ -213,6 +225,8 @@ function handleDaily(req,res){
         quoteDetails.rating = "";
         utils.logWarn("Error obtaining quote: " + quote_id + ". " + error, localSession.token);
         var instanaHeader = getInstanaSnippet(req);
+        res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
+        res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
         res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "daily", "localSession": localSession });
     });
 
@@ -247,12 +261,16 @@ function handleRandom(req,res){
             quoteDetails.rating = rating.rating;
             utils.logInfo("Obtained rating for quote: "+quote_id+".", localSession.token);
             var instanaHeader = getInstanaSnippet(req);
+            res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
+            res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
             res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "random", "localSession": localSession });
         })
         .catch( error => {
             quoteDetails.rating = "Rating service currently unavailable.";
             utils.logError("Error obtaining rating for quote "+quote_id+" Error: "+error, localSession.token);
             var instanaHeader = getInstanaSnippet(req);
+            res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
+            res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
             res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "random", "localSession": localSession });
         })
 
@@ -265,6 +283,8 @@ function handleRandom(req,res){
         quoteDetails.rating = "";
         utils.logError("Error obtaining quote: "+ quote_id + ". " + error, localSession.token);
         var instanaHeader = getInstanaSnippet(req);
+        res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
+        res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
         res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "random", "localSession": localSession });
     });
 
@@ -297,7 +317,9 @@ function authorHandler(req,res){
     utils.httpRequest(options)
     .then( (bio) => {
         utils.logInfo("Author bio received.  Author id: " + id, localSession.token );
-        var instanaHeader = getInstanaSnippet(req);
+        var instanaHeader = getInstanaSnippet(req);            
+        res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
+        res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
         res.render('author', { "data" : bio, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "author", "localSession": localSession } );
     })
     .catch( (error) => {
@@ -441,6 +463,8 @@ function getOrderHandler(req,res){
     }
     order.zip = utils.faker.address.zipCodeByState(order.state);
     var instanaHeader = getInstanaSnippet(req);
+    res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
+    res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
     res.render('order', { "order": order, "INSTANA_HEADER": instanaHeader, "pageid": "engraving", "localSession": localSession } );
 }
 
