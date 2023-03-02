@@ -48,6 +48,7 @@ app.enable('trust proxy');
 
 app.use(express.static(__dirname + '/public'));
 app.use(express.json());
+app.use(express.text());
 app.use(requestIp.mw());
 
 //================================================================================================
@@ -92,7 +93,7 @@ function getInstanaSnippet(req, pageid, localSession){
     ineum('key', '${INSTANA_KEY}');
     ineum('trackSessions');
     ineum('traceId','${traceId}');
-    ineum('allowedOrigins', [/.*api\.example\.com.*/]);
+    // ineum('allowedOrigins', [/*api]);
     ineum('page',"${pageid}");
     ineum('meta', "appVersion", "${appVersion}");
     ineum('meta', "buildInfo", "${buildInfo}");
@@ -100,7 +101,7 @@ function getInstanaSnippet(req, pageid, localSession){
     ineum('meta', "requestToken", "${localSession.token}" );
     ineum('user', "${localSession.user.userId}", "${localSession.user.userName}", "${localSession.user.email}" );
 </script>
-<script defer crossorigin="anonymous" src="/eum/eum.min.js"></script>`
+<script defer crossorigin="anonymous" src="${INSTANA_ENUM_MIN_JS_URL}"></script>`
         return instanaHeader;
     }
 }
@@ -131,7 +132,6 @@ app.get('/eum/eum.min.js', async function(req,res){
         utils.logDebug("instana enum min js sucessfull.");
         res.set("Content-Type", "application/javascript" );
         var js = enumMinJs.toString();
-        console.log(js);
         res.send(js);
     })
     .catch( (error) => {
@@ -139,6 +139,43 @@ app.get('/eum/eum.min.js', async function(req,res){
         res.status(error.status).json(error);
     });
 });
+
+
+//. proxy for enum
+
+app.post('/eum', async function(req,res){
+    // pass through request to instana server
+    var parsedUrl = parseUrl(INSTANA_REPORTING_URL);
+    var hostname = parsedUrl.resource;
+    var port = 80;
+    if( INSTANA_ENUM_MIN_JS_URL.startsWith("https") ) port = 443;
+    if (parsedUrl.port != null) port = parsedUrl.port;  
+    var payload = req.body;
+
+    utils.logDebug("Requesting instana enum min js.");
+
+    const options = {
+        "headers": { "Accept": "*/*", "Content-Type": "text/plain;charset=UTF-8" },
+        "method": 'POST',
+        "hostname": hostname,
+        "port": port,
+        "path": parsedUrl.pathname ,
+        "timeout": 5000
+    }
+
+    utils.httpsRequest(options,payload)
+    .then( (enumMinJs) => {
+        utils.logInfo("instana enum post sucessfull.");
+        var js = enumMinJs.toString();
+        res.set("Content-Length", "0" );
+        res.send("");
+    })
+    .catch( (error) => {
+        utils.logInfo("Problem Requesting instana enum min js. Error: " + error.message);
+        res.status(error.status).json(error);
+    });
+});
+
 
 //================================================================================================
 // Endpoints 
