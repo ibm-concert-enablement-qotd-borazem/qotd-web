@@ -392,6 +392,8 @@ function authorHandler(req,res){
         "timeout": 5000,
         "requestToken": localSession.token 
     }
+    
+    utils.logDebug("Options: " + JSON.stringify(options));
 
     utils.httpRequest(options)
     .then( (bio) => {
@@ -402,8 +404,8 @@ function authorHandler(req,res){
         res.render('author', { "data" : bio, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "author", "localSession": localSession } );
     })
     .catch( (error) => {
-        utils.logError("Problem getting author bio.  " + error.message, localSession.token );
-        res.status(500).send("Problem getting author bio.");
+        utils.logError("Problem getting author bio.  " + JSON.stringify(error), localSession.token );
+        res.status(500).send("Problem getting author bio." + JSON.stringify(error));
     });
 }
 
@@ -430,6 +432,8 @@ function imageHandler(req,res){
         "timeout": 5000,
         "requestToken": localSession.token 
     }
+
+    utils.logDebug("Options: " + JSON.stringify(options));
 
     utils.httpRequest(options)
     .then( (imageBuf) => {
