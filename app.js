@@ -469,7 +469,7 @@ function pdfHandler(req,res){
 
     utils.httpRequest(options)
     .then( (pdfBuf) => {
-        utils.logError("Quote PDF received.  Quote id: " + id, localSession.token);
+        utils.logInfo("Quote PDF received.  Quote id: " + id, localSession.token);
         res.status(200).end(Buffer.from(pdfBuf, 'binary'));
     })
     .catch( (error) => {
@@ -508,7 +508,7 @@ async function qrcodeHandler(req,res){
 
         utils.httpRequest(options,payload.quote)
         .then( (buf) => {
-            utils.logError("QR Code image received.  Quote id: " + id, localSession.token );
+            utils.logInfo("QR Code image received.  Quote id: " + id, localSession.token );
             res.status(200).end(Buffer.from(buf, 'binary'));
         })
         .catch( (error) => {
@@ -583,7 +583,7 @@ async function postOrderHandler(req,res){
 
     utils.httpRequest(options, payload)
     .then( (orderRes) => {
-        utils.logError("Quote PDF received.  Quote id: " + order.quote_id, localSession.token);
+        utils.logInfo("Quote PDF received.  Quote id: " + order.quote_id, localSession.token);
         res.status(200).json(orderRes);
     })
     .catch( (error) => {
