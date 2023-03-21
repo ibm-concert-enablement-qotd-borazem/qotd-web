@@ -433,7 +433,7 @@ function imageHandler(req,res){
 
     utils.httpRequest(options)
     .then( (imageBuf) => {
-        utils.logError("Author image received.  Author id: " + id, localSession.token);
+        utils.logInfo("Author image received.  Author id: " + id, localSession.token);
         res.status(200).end(Buffer.from(imageBuf, 'binary'));
     })
     .catch( (error) => {
