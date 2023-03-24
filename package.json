@@ -7,7 +7,7 @@
 	},
 	"dependencies": {
 		"express": "4.18.2",
-        "@quote-of-the-day/service-control": "0.2.50",
+        "@quote-of-the-day/service-control": "0.2.51",
 		"@instana/collector":"2.16.0",
 		"dotenv": "16.0.3",
 		"request-ip":"3.3.0",
