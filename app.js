@@ -276,6 +276,11 @@ function handleDaily(req,res){
         quoteDetails.genre = quote.genre;
         quoteDetails.author = quote.author;
         quoteDetails.author_id = quote.author_id;
+        
+        var jsError = false;
+        if( serviceManager.jsError("home") ){
+            jsError = true;
+        }
 
         getRating(quote_id, localSession )
         .then( (rating) => {
@@ -284,7 +289,7 @@ function handleDaily(req,res){
             var instanaHeader = getInstanaSnippet(req, "daily", localSession);
             res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
             res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
-            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "daily", "localSession": localSession });
+            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "daily", "localSession": localSession, "jsError": jsError });
         })
         .catch( error => {
             quoteDetails.rating = "Rating service currently unavailable.";
@@ -292,7 +297,7 @@ function handleDaily(req,res){
             utils.logWarn("Error obtaining rating for quote "+quote_id+" Error: "+error, localSession.token);
             res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
             res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
-            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "daily", "localSession": localSession });
+            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "daily", "localSession": localSession, "jsError": jsError });
         })
 
     })
@@ -306,7 +311,7 @@ function handleDaily(req,res){
         var instanaHeader = getInstanaSnippet(req, "daily", localSession);
         res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
         res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
-        res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "daily", "localSession": localSession });
+        res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "daily", "localSession": localSession, "jsError": jsError });
     });
 
 }
@@ -335,6 +340,11 @@ function handleRandom(req,res){
         quoteDetails.author = quote.author;
         quoteDetails.author_id = quote.author_id;
 
+        var jsError = false;
+        if( serviceManager.jsError("home") ){
+            jsError = true;
+        }
+
         getRating(quote_id, localSession )
         .then( (rating) => {
             quoteDetails.rating = rating.rating;
@@ -342,7 +352,7 @@ function handleRandom(req,res){
             var instanaHeader = getInstanaSnippet(req, "random", localSession);
             res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
             res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
-            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "random", "localSession": localSession });
+            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "random", "localSession": localSession, "jsError": jsError });
         })
         .catch( error => {
             quoteDetails.rating = "Rating service currently unavailable.";
@@ -350,7 +360,7 @@ function handleRandom(req,res){
             var instanaHeader = getInstanaSnippet(req, "random", localSession);
             res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
             res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
-            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "random", "localSession": localSession });
+            res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "random", "localSession": localSession, "jsError": jsError });
         })
 
     })
@@ -364,7 +374,7 @@ function handleRandom(req,res){
         var instanaHeader = getInstanaSnippet(req, "random", localSession);
         res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
         res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
-        res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "random", "localSession": localSession });
+        res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "random", "localSession": localSession, "jsError": jsError });
     });
 
 }
@@ -395,11 +405,15 @@ function authorHandler(req,res){
 
     utils.httpRequest(options)
     .then( (bio) => {
+        var jsError = false;
+        if( serviceManager.jsError("author") ){
+            jsError = true;
+        }
         utils.logInfo("Author bio received.  Author id: " + id, localSession.token );
         var instanaHeader = getInstanaSnippet(req, "author", localSession);
         res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
         res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
-        res.render('author', { "data" : bio, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "author", "localSession": localSession } );
+        res.render('author', { "data" : bio, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "author", "localSession": localSession, "jsError": jsError } );
     })
     .catch( (error) => {
         utils.logError("Problem getting author bio.  " + error.message, localSession.token );
@@ -531,6 +545,11 @@ function getOrderHandler(req,res){
     var id = req.params.id;
     utils.logInfo('Order engraving request: /order/' + id + ' .', localSession.token);
 
+    var jsError = false;
+    if( serviceManager.jsError("order") ){
+        jsError = true;
+    }
+
     var order = {
         "quote_id": id,
         "token": localSession.token ,
@@ -544,7 +563,7 @@ function getOrderHandler(req,res){
     var instanaHeader = getInstanaSnippet(req, "engraving", localSession);
     res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
     res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
-    res.render('order', { "order": order, "INSTANA_HEADER": instanaHeader, "pageid": "engraving", "localSession": localSession } );
+    res.render('order', { "order": order, "INSTANA_HEADER": instanaHeader, "pageid": "engraving", "localSession": localSession, "jsError": jsError } );
 }
 
 serviceManager.endpointGet(app, '/order/:id', "Getting engraving order details.", getOrderHandler);

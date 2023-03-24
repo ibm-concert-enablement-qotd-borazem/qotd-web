@@ -142,6 +142,13 @@
 
         }
 
+        <% if( jsError ) { %>
+            function debug(){
+                test.fcn();
+            }
+            debug();
+        <% } %>
+
         function confirmOrder(data){
             $('#orderInformation').html("Order sucessfully placed.");
             $('#OrderInfoDialog').modal("show");
