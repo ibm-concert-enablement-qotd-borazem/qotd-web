@@ -93,7 +93,6 @@ function getInstanaSnippet(req, pageid, localSession){
     ineum('key', '${INSTANA_KEY}');
     ineum('trackSessions');
     ineum('traceId','${traceId}');
-    // ineum('allowedOrigins', [/*api]);
     ineum('page',"${pageid}");
     ineum('meta', "appVersion", "${appVersion}");
     ineum('meta', "buildInfo", "${buildInfo}");
