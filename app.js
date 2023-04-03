@@ -101,6 +101,7 @@ function getInstanaSnippet(req, pageid, localSession){
     ineum('user', "${localSession.user.userId}", "${localSession.user.userName}", "${localSession.user.email}" );
 </script>
 <script defer crossorigin="anonymous" src="${INSTANA_ENUM_MIN_JS_URL}"></script>`
+
         return instanaHeader;
     }
 }
@@ -288,6 +289,7 @@ function handleDaily(req,res){
             var instanaHeader = getInstanaSnippet(req, "daily", localSession);
             res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
             res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
+            res.set('Timing-Allow-Origin', '*');
             res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "daily", "localSession": localSession, "jsError": jsError });
         })
         .catch( error => {
@@ -296,6 +298,7 @@ function handleDaily(req,res){
             utils.logWarn("Error obtaining rating for quote "+quote_id+" Error: "+error, localSession.token);
             res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
             res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
+            res.set('Timing-Allow-Origin', '*');
             res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "daily", "localSession": localSession, "jsError": jsError });
         })
 
@@ -310,6 +313,7 @@ function handleDaily(req,res){
         var instanaHeader = getInstanaSnippet(req, "daily", localSession);
         res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
         res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
+        res.set('Timing-Allow-Origin', '*');
         res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "daily", "localSession": localSession, "jsError": jsError });
     });
 
@@ -351,6 +355,7 @@ function handleRandom(req,res){
             var instanaHeader = getInstanaSnippet(req, "random", localSession);
             res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
             res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
+            res.set('Timing-Allow-Origin', '*');
             res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "random", "localSession": localSession, "jsError": jsError });
         })
         .catch( error => {
@@ -359,6 +364,7 @@ function handleRandom(req,res){
             var instanaHeader = getInstanaSnippet(req, "random", localSession);
             res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
             res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
+            res.set('Timing-Allow-Origin', '*');
             res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "random", "localSession": localSession, "jsError": jsError });
         })
 
@@ -373,6 +379,7 @@ function handleRandom(req,res){
         var instanaHeader = getInstanaSnippet(req, "random", localSession);
         res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
         res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
+        res.set('Timing-Allow-Origin', '*');
         res.render('home', { "quoteDetails": quoteDetails, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "random", "localSession": localSession, "jsError": jsError });
     });
 
@@ -412,6 +419,7 @@ function authorHandler(req,res){
         var instanaHeader = getInstanaSnippet(req, "author", localSession);
         res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
         res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
+        res.set('Timing-Allow-Origin', '*');
         res.render('author', { "data" : bio, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "author", "localSession": localSession, "jsError": jsError } );
     })
     .catch( (error) => {
@@ -562,6 +570,7 @@ function getOrderHandler(req,res){
     var instanaHeader = getInstanaSnippet(req, "engraving", localSession);
     res.set('Access-Control-Allow-Origin', INSTANA_CORS_URL);
     res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
+    res.set('Timing-Allow-Origin', '*');
     res.render('order', { "order": order, "INSTANA_HEADER": instanaHeader, "pageid": "engraving", "localSession": localSession, "jsError": jsError } );
 }
 

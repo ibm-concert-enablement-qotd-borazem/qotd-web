@@ -71,16 +71,20 @@
 
     </main>
 
-    <script>
-
-        <% if( jsError ) { %>
+    <% if( jsError ) { %>
+        <script>
             function debug(){
                 test.fcn();
             }
-            debug();
-        <% } %>
+            window.addEventListener('load', 
+                function() { 
+                    debug();
+                }, false
+            );
 
-    </script>
+        </script>
+    <% } %>
+
     
 </body>
 

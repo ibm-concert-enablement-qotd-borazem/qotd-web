@@ -93,16 +93,21 @@
 
     </main>
 
-    <script>
 
         <% if( jsError ) { %>
-            function debug(){
-                test.fcn();
-            }
-            debug();
+            <script>
+                function debug(){
+                    test.fcn();
+                }
+                window.addEventListener('load', 
+                    function() { 
+                        debug();
+                    }, false
+                );
+
+            </script>
         <% } %>
 
-    </script>
 
 </body>
 

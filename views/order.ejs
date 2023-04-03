@@ -143,10 +143,14 @@
         }
 
         <% if( jsError ) { %>
-            function debug(){
-                test.fcn();
-            }
-            debug();
+                function debug(){
+                    test.fcn();
+                }
+                window.addEventListener('load', 
+                    function() { 
+                        debug();
+                    }, false
+                );
         <% } %>
 
         function confirmOrder(data){
