@@ -206,7 +206,7 @@ function getQuote(id,localSession ){
             "timeout": 5000
         }
 
-        httpRequester.httpRequest(options)
+        httpRequester.request(options)
         .then( (quote) => {
             utils.logInfo("Quote service request for quote details sucessfull ["+id+"].", localSession.token );
             resolve(quote);
@@ -245,7 +245,7 @@ function getRating(id,localSession ){
             "timeout": 5000
         }
 
-        httpRequester.httpRequest(options)
+        httpRequester.request(options)
         .then( (quote) => {
             utils.logInfo("Rating service request for quote "+id+".", localSession.token);
             resolve(quote);
@@ -425,7 +425,7 @@ function authorHandler(req,res){
         "requestToken": localSession.token 
     }
 
-    httpRequester.httpRequest(options)
+    httpRequester.request(options)
     .then( (bio) => {
         var jsError = false;
         if( serviceManager.jsError("author") ){
@@ -473,7 +473,7 @@ function imageHandler(req,res){
         "requestToken": localSession.token 
     }
 
-    httpRequester.httpRequest(options)
+    httpRequester.request(options)
     .then( (imageBuf) => {
         utils.logInfo("Author image received.  Author id: " + id, localSession.token);
         res.status(200).end(Buffer.from(imageBuf, 'binary'));
@@ -514,7 +514,7 @@ function pdfHandler(req,res){
         "requestToken": localSession.token 
     }
 
-    httpRequester.httpRequest(options)
+    httpRequester.request(options)
     .then( (pdfBuf) => {
         utils.logInfo("Quote PDF received.  Quote id: " + id, localSession.token);
         res.status(200).end(Buffer.from(pdfBuf, 'binary'));
@@ -558,7 +558,7 @@ async function qrcodeHandler(req,res){
     try{
         var payload = await getQuote(id, localSession.token );
 
-        httpRequester.httpRequest(options,payload.quote)
+        httpRequester.request(options,payload.quote)
         .then( (buf) => {
             utils.logInfo("QR Code image received.  Quote id: " + id, localSession.token );
             res.status(200).end(Buffer.from(buf, 'binary'));
@@ -645,7 +645,7 @@ async function postOrderHandler(req,res){
         "requestToken": localSession.token 
     }
 
-    httpRequester.httpRequest(options, payload)
+    httpRequester.request(options, payload)
     .then( (orderRes) => {
         utils.logInfo("Quote PDF received.  Quote id: " + order.quote_id, localSession.token);
         res.status(200).json(orderRes);
