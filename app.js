@@ -189,7 +189,7 @@ function getQuote(id,localSession ){
 
         var port = 80; // set default
         var httpRequester = http;
-        if (url.startsWith("https://")) {
+        if (process.env.QUOTE_SVC.startsWith("https://")) {
             httpRequester = https;
             port = 443; // change default
         }
@@ -229,7 +229,7 @@ function getRating(id,localSession ){
         var hostname = parsedUrl.resource;
         var port = 80; // set default
         var httpRequester = http;
-        if (url.startsWith("https://")) {
+        if (process.env.RATING_SVC.startsWith("https://")) {
             httpRequester = https;
             port = 443; // change default
         }
@@ -409,7 +409,7 @@ function authorHandler(req,res){
     var hostname = parsedUrl.resource;
     var port = 80; // set default
     var httpRequester = http;
-    if (url.startsWith("https://")) {
+    if (process.env.AUTHOR_SVC.startsWith("https://")) {
         httpRequester = https;
         port = 443; // change default
     }
@@ -457,7 +457,7 @@ function imageHandler(req,res){
     var hostname = parsedUrl.resource;
     var port = 80; // set default
     var httpRequester = http;
-    if (url.startsWith("https://")) {
+    if (process.env.AUTHOR_SVC.startsWith("https://")) {
         httpRequester = https;
         port = 443; // change default
     }
@@ -498,7 +498,7 @@ function pdfHandler(req,res){
     var hostname = parsedUrl.resource;
     var port = 80; // set default
     var httpRequester = http;
-    if (url.startsWith("https://")) {
+    if (process.env.PDF_SVC.startsWith("https://")) {
         httpRequester = https;
         port = 443; // change default
     }
@@ -539,7 +539,7 @@ async function qrcodeHandler(req,res){
     var hostname = parsedUrl.resource;
     var port = 80; // set default
     var httpRequester = http;
-    if (url.startsWith("https://")) {
+    if (process.env.QRCODE_SVC.startsWith("https://")) {
         httpRequester = https;
         port = 443; // change default
     }
@@ -623,11 +623,11 @@ async function postOrderHandler(req,res){
 
     var payload = JSON.stringify(order);
 
-    var parsedUrl = parseUrl(ENGRAVING_SVC);
+    var parsedUrl = parseUrl(process.env.ENGRAVING_SVC);
     var hostname = parsedUrl.resource;
     var port = 80; // set default
     var httpRequester = http;
-    if (url.startsWith("https://")) {
+    if (process.env.ENGRAVING_SVC.startsWith("https://")) {
         httpRequester = https;
         port = 443; // change default
     }
