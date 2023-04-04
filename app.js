@@ -12,7 +12,6 @@ const moment = require('moment');
 const parseUrl = require('parse-url');
 const serviceManager = require('@quote-of-the-day/service-control');
 const utils = serviceManager.utils;
-const { http, https } = require('follow-redirects');
 
 USE_REQ_TOKEN = true;
 if (typeof process.env.USE_REQ_TOKEN != 'undefined' && (process.env.USE_REQ_TOKEN.toLowerCase() == 'false' ) ) {
@@ -186,14 +185,8 @@ function getQuote(id,localSession ){
     return new Promise((resolve, reject) => { 
         var parsedUrl = parseUrl(process.env.QUOTE_SVC);
         var hostname = parsedUrl.resource;
-
-        var port = 80; // set default
-        var httpRequester = http;
-        if (process.env.QUOTE_SVC.startsWith("https://")) {
-            httpRequester = https;
-            port = 443; // change default
-        }
-        if (parsedUrl.port >= 80 && parsedUrl.port <= 65535) port = parsedUrl.port;
+        var port = 80;
+        if (parsedUrl.port != null) port = parsedUrl.port;  
 
         utils.logInfo("Requesting quote " + id + ".", localSession.token );
 
@@ -206,7 +199,7 @@ function getQuote(id,localSession ){
             "timeout": 5000
         }
 
-        httpRequester.request(options)
+        utils.httpRequest(options)
         .then( (quote) => {
             utils.logInfo("Quote service request for quote details sucessfull ["+id+"].", localSession.token );
             resolve(quote);
@@ -227,13 +220,9 @@ function getRating(id,localSession ){
 
         var parsedUrl = parseUrl(process.env.RATING_SVC);
         var hostname = parsedUrl.resource;
-        var port = 80; // set default
-        var httpRequester = http;
-        if (process.env.RATING_SVC.startsWith("https://")) {
-            httpRequester = https;
-            port = 443; // change default
-        }
-        if (parsedUrl.port >= 80 && parsedUrl.port <= 65535) port = parsedUrl.port;
+        var port = 80;
+        if (parsedUrl.port != null) port = parsedUrl.port;  
+
         utils.logInfo("Requesting rating for quote " + id + ".", localSession.token );
 
         const options = {
@@ -245,7 +234,7 @@ function getRating(id,localSession ){
             "timeout": 5000
         }
 
-        httpRequester.request(options)
+        utils.httpRequest(options)
         .then( (quote) => {
             utils.logInfo("Rating service request for quote "+id+".", localSession.token);
             resolve(quote);
@@ -407,13 +396,8 @@ function authorHandler(req,res){
 
     var parsedUrl = parseUrl(process.env.AUTHOR_SVC);
     var hostname = parsedUrl.resource;
-    var port = 80; // set default
-    var httpRequester = http;
-    if (process.env.AUTHOR_SVC.startsWith("https://")) {
-        httpRequester = https;
-        port = 443; // change default
-    }
-    if (parsedUrl.port >= 80 && parsedUrl.port <= 65535) port = parsedUrl.port;
+    var port = 80;
+    if (parsedUrl.port != null) port = parsedUrl.port;
 
     const options = {
         "headers": { "Accept": "application/json" },
@@ -425,7 +409,7 @@ function authorHandler(req,res){
         "requestToken": localSession.token 
     }
 
-    httpRequester.request(options)
+    utils.httpRequest(options)
     .then( (bio) => {
         var jsError = false;
         if( serviceManager.jsError("author") ){
@@ -455,13 +439,8 @@ function imageHandler(req,res){
 
     var parsedUrl = parseUrl(process.env.AUTHOR_SVC);
     var hostname = parsedUrl.resource;
-    var port = 80; // set default
-    var httpRequester = http;
-    if (process.env.AUTHOR_SVC.startsWith("https://")) {
-        httpRequester = https;
-        port = 443; // change default
-    }
-    if (parsedUrl.port >= 80 && parsedUrl.port <= 65535) port = parsedUrl.port;
+    var port = 80;
+    if (parsedUrl.port != null) port = parsedUrl.port;
 
     const options = {
         "headers": { "Accept": "image/jpeg" },
@@ -473,7 +452,7 @@ function imageHandler(req,res){
         "requestToken": localSession.token 
     }
 
-    httpRequester.request(options)
+    utils.httpRequest(options)
     .then( (imageBuf) => {
         utils.logInfo("Author image received.  Author id: " + id, localSession.token);
         res.status(200).end(Buffer.from(imageBuf, 'binary'));
@@ -496,13 +475,8 @@ function pdfHandler(req,res){
 
     var parsedUrl = parseUrl(process.env.PDF_SVC);
     var hostname = parsedUrl.resource;
-    var port = 80; // set default
-    var httpRequester = http;
-    if (process.env.PDF_SVC.startsWith("https://")) {
-        httpRequester = https;
-        port = 443; // change default
-    }
-    if (parsedUrl.port >= 80 && parsedUrl.port <= 65535) port = parsedUrl.port;
+    var port = 80;
+    if (parsedUrl.port != null) port = parsedUrl.port;
 
     const options = {
         "headers": { "Accept": "application/pdf" },
@@ -514,7 +488,7 @@ function pdfHandler(req,res){
         "requestToken": localSession.token 
     }
 
-    httpRequester.request(options)
+    utils.httpRequest(options)
     .then( (pdfBuf) => {
         utils.logInfo("Quote PDF received.  Quote id: " + id, localSession.token);
         res.status(200).end(Buffer.from(pdfBuf, 'binary'));
@@ -537,13 +511,8 @@ async function qrcodeHandler(req,res){
 
     var parsedUrl = parseUrl(process.env.QRCODE_SVC);
     var hostname = parsedUrl.resource;
-    var port = 80; // set default
-    var httpRequester = http;
-    if (process.env.QRCODE_SVC.startsWith("https://")) {
-        httpRequester = https;
-        port = 443; // change default
-    }
-    if (parsedUrl.port >= 80 && parsedUrl.port <= 65535) port = parsedUrl.port;
+    var port = 80;
+    if (parsedUrl.port != null) port = parsedUrl.port;
 
     const options = {
         "headers": { "Accept": "image/png" },
@@ -558,7 +527,7 @@ async function qrcodeHandler(req,res){
     try{
         var payload = await getQuote(id, localSession.token );
 
-        httpRequester.request(options,payload.quote)
+        utils.httpRequest(options,payload.quote)
         .then( (buf) => {
             utils.logInfo("QR Code image received.  Quote id: " + id, localSession.token );
             res.status(200).end(Buffer.from(buf, 'binary'));
@@ -623,16 +592,10 @@ async function postOrderHandler(req,res){
 
     var payload = JSON.stringify(order);
 
-    var parsedUrl = parseUrl(process.env.ENGRAVING_SVC);
+    var parsedUrl = parseUrl(ENGRAVING_SVC);
     var hostname = parsedUrl.resource;
-    var port = 80; // set default
-    var httpRequester = http;
-    if (process.env.ENGRAVING_SVC.startsWith("https://")) {
-        httpRequester = https;
-        port = 443; // change default
-    }
-    if (parsedUrl.port >= 80 && parsedUrl.port <= 65535) port = parsedUrl.port;
-
+    var port = 80;
+    if (parsedUrl.port != null) port = parsedUrl.port;
     var path = '/order?requestToken=' + localSession.token ;
 
     const options = {
@@ -645,7 +608,7 @@ async function postOrderHandler(req,res){
         "requestToken": localSession.token 
     }
 
-    httpRequester.request(options, payload)
+    utils.httpRequest(options, payload)
     .then( (orderRes) => {
         utils.logInfo("Quote PDF received.  Quote id: " + order.quote_id, localSession.token);
         res.status(200).json(orderRes);
