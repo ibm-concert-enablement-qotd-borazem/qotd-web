@@ -535,9 +535,10 @@ function getOrderHandler(req,res){
     var id = req.params.id;
     utils.logInfo('Order engraving request: /order/' + id + ' .', localSession.token);
 
+
     var order = {
         "quote_id": id,
-        "token": localSession.token ,
+        "token": localSession.token,
         "orderNo": utils.faker.finance.account,
         "dedication": utils.faker.lorem.slug(),
         "street": utils.faker.address.streetAddress(),
@@ -561,39 +562,68 @@ async function postOrderHandler(req,res){
     utils.logInfo('Processing order engraving request: /order.', localSession.token);
 
     var order = req.body;
-    order.customer = utils.faker.finance.accountName;
+    var quote_id = order.quote_id;
+    // override json
+    var mqorder = {
+        "MQMESSAGE": {
+            "number": utils.intBetween(10000,99999),
+            "name": utils.faker.name.firstName() + " " + utils.faker.name.lastName(),
+            "address": utils.faker.address.streetAddress() + ", " + utils.faker.address.city() + " " + utils.faker.address.stateAbbr() + " " + utils.faker.address.zipCode(),
+            "phone": utils.faker.phone.phoneNumber(),
+            "date": utils.faker.date.recent(),
+            "amount": "$" + utils.intBetween(100,999) + ".00",
+            "comment": utils.faker.lorem.sentence()
+        }
+    }
+    // order.customer = utils.faker.finance.accountName;
 
-    var quote = await getQuote(order.quote_id, localSession.token );
+    var quote = await getQuote(quote_id, localSession.token );
     order.quote = quote.quote;
     order.author = quote.author;
 
-    var payload = JSON.stringify(order);
+    var payload = JSON.stringify(mqorder);
 
-    var parsedUrl = parseUrl(ENGRAVING_SVC);
-    var hostname = parsedUrl.resource;
-    var port = 80;
-    if (parsedUrl.port != null) port = parsedUrl.port;
-    var path = '/order?requestToken=' + localSession.token ;
+    utils.logInfo("Calling engraving service " + JSON.stringify(payload))
 
-    const options = {
-        "headers": { "Accept": "application/json" },
-        "method": 'POST',
-        "hostname": hostname,
-        "port": port,
-        "path": path,
-        "timeout": 5000,
-        "requestToken": localSession.token 
+    try{
+        var result = await utils.callRest("POST", ENGRAVING_SVC + "/order", mqorder);
+        utils.logInfo("Engraving service result" + JSON.stringify(result))
+        res.status(201).json(result);
+    } catch( error ) {
+        utils.logError("Engraving service call error" + JSON.stringify(error))
+        res.status(500).json(error);
     }
 
-    utils.httpRequest(options, payload)
-    .then( (orderRes) => {
-        utils.logInfo("Quote PDF received.  Quote id: " + order.quote_id, localSession.token);
-        res.status(200).json(orderRes);
-    })
-    .catch( (error) => {
-        utils.logError("Problem requesting engraving.  " + error.message, localSession.token);
-        res.status(500).send("Problem requesting engraving. "+error.message);
-    });
+
+
+    // var parsedUrl = parseUrl(ENGRAVING_SVC);
+    // var hostname = parsedUrl.resource;
+    // var port = 80;
+    // if (parsedUrl.port != null) port = parsedUrl.port;
+    // var path = '/order?requestToken=' + localSession.token ;
+
+    // const options = {
+    //     "headers": { "Accept": "application/json" },
+    //     "method": 'POST',
+    //     "hostname": hostname,
+    //     "port": port,
+    //     "path": path,
+    //     "timeout": 5000,
+    //     "requestToken": localSession.token 
+    // }
+
+
+    // utils.httpRequest(options, payload)
+    // .then( (orderRes) => {
+    //     utils.logInfo("Quote PDF received.  Quote id: " + order.quote_id, localSession.token);
+    //     res.status(200).json(orderRes);
+    // })
+    // .catch( (error) => {
+    //     utils.logError("non json err: " + error )
+    //     utils.logError("json err: " + JSON.stringify(error) )
+    //     utils.logError("Problem requesting engraving.  " + error.message, localSession.token);
+    //     res.status(500).send("Problem requesting engraving. "+error.message);
+    // });
 }
 serviceManager.endpointPost(app, '/order', "Submitting engraving request to manufacturing.", postOrderHandler);
 
