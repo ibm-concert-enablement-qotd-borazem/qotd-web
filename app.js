@@ -205,7 +205,7 @@ function getQuote(id,localSession ){
             resolve(quote);
         })
         .catch( (error) => {
-            utils.logInfo("Problem submitting quote service quote request. Error: " + error.message, localSession.token);
+            utils.logError("Problem submitting quote service quote request. Error: " + error.message, localSession.token);
             var errObj = {
                 "error": 'Rejecting quote service.  Status: ' + error.statusCode,
                 "resource": `http://${options.hostname}:${options.port}${options.path}`
@@ -240,7 +240,7 @@ function getRating(id,localSession ){
             resolve(quote);
         })
         .catch( (error) => {
-            utils.logInfo("Problem getting rating. Error: " + error.message, localSession.token);
+            utils.logError("Problem getting rating. Error: " + error.message, localSession.token);
             var errObj = {
                 "error": 'Rejecting rating service.  Status: ' + error.statusCode,
                 "resource": `http://${options.hostname}:${options.port}${options.path}`
