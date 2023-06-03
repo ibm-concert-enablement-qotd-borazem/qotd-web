@@ -6,3 +6,4 @@ z_*
 package-lock.json
 .vscode/launch.json
 .envQotd
+certs/*

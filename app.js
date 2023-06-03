@@ -6,6 +6,8 @@ if (process.env.ENABLE_INSTANA == "true") {
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const express = require('express');
+const http = require('https');
+const https = require('https');
 const fs = require('fs');
 const requestIp = require('request-ip');
 const moment = require('moment');
@@ -29,7 +31,6 @@ ENGRAVING_SVC = process.env.ENGRAVING_SVC;
 QRCODE_SVC = process.env.QRCODE_SVC;
 HIDE_IMAGE = false;
 
-
 BRANDING=null;
 if( typeof process.env.BRANDING == "string" && process.env.BRANDING.length>0  ){
     BRANDING = process.env.BRANDING;
@@ -50,6 +51,7 @@ app.use(express.static(__dirname + '/public'));
 app.use(express.json());
 app.use(express.text());
 app.use(requestIp.mw());
+
 
 //================================================================================================
 // simulated user / web page data
@@ -129,7 +131,7 @@ app.get('/eum/eum.min.js', async function(req,res){
 
     utils.httpsRequest(options)
     .then( (enumMinJs) => {
-        utils.logDebug("instana enum min js sucessfull.");
+        utils.logDebug("instana enum min js successful.");
         res.set("Content-Type", "application/javascript" );
         var js = enumMinJs.toString();
         res.send(js);
@@ -182,77 +184,51 @@ app.post('/eum', async function(req,res){
 
 
 function getQuote(id,localSession ){
-    return new Promise((resolve, reject) => { 
-        var parsedUrl = parseUrl(process.env.QUOTE_SVC);
-        var hostname = parsedUrl.resource;
-        var port = 80;
-        if (parsedUrl.port != null) port = parsedUrl.port;  
+    return new Promise(async (resolve, reject) => { 
 
-        utils.logInfo("Requesting quote " + id + ".", localSession.token );
+        var url = process.env.QUOTE_SVC + '/quotes/'+id+'?requestToken=' + localSession.token;
+        utils.logInfo(`Requesting quote ${id}.`, localSession.token );
 
-        const options = {
-            "headers": { "Accept": "application/json" },
-            "method": 'GET',
-            "hostname": hostname,
-            "port": port,
-            "path": '/quotes/' + id + '?requestToken=' + localSession.token ,
-            "timeout": 5000
-        }
-
-        utils.httpRequest(options)
-        .then( (quote) => {
-            utils.logInfo("Quote service request for quote details sucessfull ["+id+"].", localSession.token );
-            resolve(quote);
-        })
-        .catch( (error) => {
+        try{        
+            var resObj = await utils.callRest("GET", url);
+            utils.logInfo(`Quote service request for quote details successful [${id}].`, localSession.token);
+            resolve(resObj.data);
+        } catch( error ) {
             utils.logError("Problem submitting quote service quote request. Error: " + error.message, localSession.token);
             var errObj = {
                 "error": 'Rejecting quote service.  Status: ' + error.statusCode,
-                "resource": `http://${options.hostname}:${options.port}${options.path}`
+                "resource": url
             }
             reject(errObj);
-        });
+        }
+
     });
 }
 
 function getRating(id,localSession ){
-    return new Promise((resolve, reject) => { 
+    return new Promise(async (resolve, reject) => { 
 
-        var parsedUrl = parseUrl(process.env.RATING_SVC);
-        var hostname = parsedUrl.resource;
-        var port = 80;
-        if (parsedUrl.port != null) port = parsedUrl.port;  
-
+        var url = process.env.RATING_SVC + '/ratings/'+id+'?requestToken=' + localSession.token;
         utils.logInfo("Requesting rating for quote " + id + ".", localSession.token );
 
-        const options = {
-            "headers": { "Accept": "application/json" },
-            "method": 'GET',
-            "hostname": hostname,
-            "port": port,
-            "path": '/ratings/' + id + '?requestToken=' + localSession.token ,
-            "timeout": 5000
-        }
-
-        utils.httpRequest(options)
-        .then( (quote) => {
-            utils.logInfo("Rating service request for quote "+id+".", localSession.token);
-            resolve(quote);
-        })
-        .catch( (error) => {
+        try{        
+            var resObj = await utils.callRest("GET", url);
+            utils.logInfo(`Rating service request for quote ${id}.  Response ${resObj.status}`, localSession.token);
+            resolve(resObj.data);
+        } catch( error ) {
             utils.logError("Problem getting rating. Error: " + error.message, localSession.token);
             var errObj = {
                 "error": 'Rejecting rating service.  Status: ' + error.statusCode,
-                "resource": `http://${options.hostname}:${options.port}${options.path}`
+                "resource": url
             }
             reject(errObj);
-        });
+        }
+
     });
 }
 
 const ENABLE_ENGRAVING = (typeof ENGRAVING_SVC != 'undefined' && ENGRAVING_SVC != "");
 const ENABLE_QRCODE = (typeof QRCODE_SVC != 'undefined' && QRCODE_SVC != "");
-
 
 function handleDaily(req,res){
     var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
@@ -270,6 +246,7 @@ function handleDaily(req,res){
         "enableQR": ENABLE_QRCODE
     }
 
+    var jsError = false;
     getQuote(quote_id, localSession )
     .then( (quote) => {
         quoteDetails.quote = quote.quote;
@@ -277,7 +254,6 @@ function handleDaily(req,res){
         quoteDetails.author = quote.author;
         quoteDetails.author_id = quote.author_id;
         
-        var jsError = false;
         if( serviceManager.jsError("home") ){
             jsError = true;
         }
@@ -387,30 +363,37 @@ function handleRandom(req,res){
 
 serviceManager.endpointGet(app, '/random', "Processing random quote request", handleRandom);
 
-function authorHandler(req,res){
+function getAuthor(id,localSession ){
+    return new Promise(async (resolve, reject) => { 
+
+        var url = process.env.AUTHOR_SVC + '/authors/'+id+'?requestToken=' + localSession.token;
+        utils.logInfo("Author bio request: /authors/" + id + ".", localSession.token );
+
+        try{        
+            var resObj = await utils.callRest("GET", url);
+            utils.logInfo(`Author service request for author ${id}.  Response ${resObj.status}`, localSession.token);
+            resolve(resObj.data);
+        } catch( error ) {
+            utils.logError("Problem getting author. Error: " + error.message, localSession.token);
+            var errObj = {
+                "error": 'Rejecting author service.  Status: ' + error.statusCode,
+                "resource": url
+            }
+            reject(errObj);
+        }
+
+    });
+}
+
+async function authorHandler(req,res){
     var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     var localSession  = newLocalSession();
     utils.logInfo('Starting new request token. Incoming for IP: ' + ip, localSession.token);
     var id = req.params.id;
     utils.logInfo('Author bio request: /author/' + id + ' .', localSession.token);
 
-    var parsedUrl = parseUrl(process.env.AUTHOR_SVC);
-    var hostname = parsedUrl.resource;
-    var port = 80;
-    if (parsedUrl.port != null) port = parsedUrl.port;
-
-    const options = {
-        "headers": { "Accept": "application/json" },
-        "method": 'GET',
-        "hostname": hostname,
-        "port": port,
-        "path": '/authors/' + id + '?requestToken=' + localSession.token ,
-        "timeout": 5000,
-        "requestToken": localSession.token 
-    }
-
-    utils.httpRequest(options)
-    .then( (bio) => {
+    try{
+        var bio = await getAuthor(id, localSession);
         var jsError = false;
         if( serviceManager.jsError("author") ){
             jsError = true;
@@ -421,11 +404,12 @@ function authorHandler(req,res){
         res.set('Access-Control-Allow-Headers', 'X-INSTANA-T, X-INSTANA-S, X-INSTANA-L');
         res.set('Timing-Allow-Origin', '*');
         res.render('author', { "data" : bio, "branding" : BRANDING, "INSTANA_HEADER": instanaHeader, "pageid": "author", "localSession": localSession, "jsError": jsError } );
-    })
-    .catch( (error) => {
-        utils.logError("Problem getting author bio.  " + error.message, localSession.token );
+
+    }catch( err ) {
+        utils.logError("Problem getting author bio.  " + JSON.stringify(err), localSession.token );
         res.status(500).send("Problem getting author bio.");
-    });
+    }
+
 }
 
 serviceManager.endpointGet(app, '/author/:id', "Processing author bio request", authorHandler);
@@ -440,6 +424,12 @@ function imageHandler(req,res){
     var parsedUrl = parseUrl(process.env.AUTHOR_SVC);
     var hostname = parsedUrl.resource;
     var port = 80;
+    var port = 80; // set default
+    var httpRequester = utils.httpRequest;
+    if (process.env.AUTHOR_SVC.startsWith("https://")) {
+        httpRequester = utils.httpsRequest;
+        port = 443; // change default
+    }
     if (parsedUrl.port != null) port = parsedUrl.port;
 
     const options = {
@@ -452,7 +442,7 @@ function imageHandler(req,res){
         "requestToken": localSession.token 
     }
 
-    utils.httpRequest(options)
+    httpRequester(options)
     .then( (imageBuf) => {
         utils.logInfo("Author image received.  Author id: " + id, localSession.token);
         res.status(200).end(Buffer.from(imageBuf, 'binary'));
@@ -461,6 +451,7 @@ function imageHandler(req,res){
         utils.logError("Problem getting author image.  " + error.message, localSession.token);
         res.status(500).send("Problem getting author image.");
     });
+
 }
 
 serviceManager.endpointGet(app, '/images/:id', "Processing author image request", imageHandler);
@@ -475,7 +466,12 @@ function pdfHandler(req,res){
 
     var parsedUrl = parseUrl(process.env.PDF_SVC);
     var hostname = parsedUrl.resource;
-    var port = 80;
+    var port = 80;    
+    var httpRequester = utils.httpRequest;
+    if (process.env.AUTHOR_SVC.startsWith("https://")) {
+        httpRequester = utils.httpsRequest;
+        port = 443; // change default
+    }
     if (parsedUrl.port != null) port = parsedUrl.port;
 
     const options = {
@@ -488,7 +484,7 @@ function pdfHandler(req,res){
         "requestToken": localSession.token 
     }
 
-    utils.httpRequest(options)
+    httpRequester(options)
     .then( (pdfBuf) => {
         utils.logInfo("Quote PDF received.  Quote id: " + id, localSession.token);
         res.status(200).end(Buffer.from(pdfBuf, 'binary'));
@@ -512,6 +508,11 @@ async function qrcodeHandler(req,res){
     var parsedUrl = parseUrl(process.env.QRCODE_SVC);
     var hostname = parsedUrl.resource;
     var port = 80;
+    var httpRequester = utils.httpRequest;
+    if (process.env.QRCODE_SVC.startsWith("https://")) {
+        httpRequester = utils.httpsRequest;
+        port = 443; // change default
+    }
     if (parsedUrl.port != null) port = parsedUrl.port;
 
     const options = {
@@ -527,7 +528,7 @@ async function qrcodeHandler(req,res){
     try{
         var payload = await getQuote(id, localSession.token );
 
-        utils.httpRequest(options,payload.quote)
+        httpRequester(options,payload.quote)
         .then( (buf) => {
             utils.logInfo("QR Code image received.  Quote id: " + id, localSession.token );
             res.status(200).end(Buffer.from(buf, 'binary'));
@@ -595,6 +596,11 @@ async function postOrderHandler(req,res){
     var parsedUrl = parseUrl(ENGRAVING_SVC);
     var hostname = parsedUrl.resource;
     var port = 80;
+    var httpRequester = utils.httpRequest;
+    if (process.env.ENGRAVING_SVC.startsWith("https://")) {
+        httpRequester = utils.httpsRequest;
+        port = 443; // change default
+    }
     if (parsedUrl.port != null) port = parsedUrl.port;
     var path = '/order?requestToken=' + localSession.token ;
 
@@ -608,7 +614,7 @@ async function postOrderHandler(req,res){
         "requestToken": localSession.token 
     }
 
-    utils.httpRequest(options, payload)
+    httpRequester(options, payload)
     .then( (orderRes) => {
         utils.logInfo("Quote PDF received.  Quote id: " + order.quote_id, localSession.token);
         res.status(200).json(orderRes);
@@ -632,5 +638,14 @@ var app_config = {
     "build": buildInfo
 }
 
-serviceManager.start(app, app_config);
+
+var httpsOptions;
+if( fs.existsSync('./certs') ) {
+    httpsOptions = {
+        key: fs.readFileSync('./certs/cert.key'),
+        cert: fs.readFileSync('./certs/cert.pem')
+    }
+}
+
+serviceManager.start(app, app_config, httpsOptions);
 
