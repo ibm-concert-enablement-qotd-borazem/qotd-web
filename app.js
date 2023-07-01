@@ -167,7 +167,7 @@ app.post('/eum', async function(req,res){
 
     utils.httpsRequest(options,payload)
     .then( (enumMinJs) => {
-        utils.logInfo("instana enum post sucessfull.");
+        utils.logInfo("instana enum post successful.");
         var js = enumMinJs.toString();
         res.set("Content-Length", "0" );
         res.send("");
