@@ -12,8 +12,8 @@ COPY ./*.json ./
 COPY views ./views
 COPY public ./public
 
-RUN npm config set @quote-of-the-day:registry=https://gitlab.com/api/v4/projects/32433382/packages/npm/
-RUN npm install
+RUN npm config set @quote-of-the-day:registry=https://gitlab.com/api/v4/projects/32433382/packages/npm/ && \
+    npm install
 
 EXPOSE 3000
 
