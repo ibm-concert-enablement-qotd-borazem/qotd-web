@@ -1,5 +1,9 @@
 FROM registry.access.redhat.com/ubi8/nodejs-18:1
 
+USER root
+
+RUN dnf update -y && dnf upgrade -y
+
 USER 1001
 
 WORKDIR /opt/app-root/src
