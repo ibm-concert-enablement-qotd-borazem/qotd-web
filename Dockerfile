@@ -1,7 +1,8 @@
-FROM node:14.16.0-alpine
+FROM registry.access.redhat.com/ubi8/nodejs-18:1
 
-RUN mkdir /app
-WORKDIR /app
+USER 1001
+
+WORKDIR /opt/app-root/src
 
 COPY LICENSE .
 COPY README.md .
