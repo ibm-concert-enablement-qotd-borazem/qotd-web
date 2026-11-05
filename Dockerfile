@@ -17,6 +17,10 @@ COPY ./*.json ./
 COPY views ./views
 COPY public ./public
 
+USER root
+RUN chown -R 1001:0 /opt/app-root/src && chmod -R g+rwX /opt/app-root/src
+USER 1001
+
 RUN npm config set @quote-of-the-day:registry=https://gitlab.com/api/v4/projects/32433382/packages/npm/ && \
     npm install
 
